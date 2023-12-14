@@ -1,0 +1,19 @@
+{
+  "item.decobeacon.fake_steak": "Fake Steak",
+  "block.decobeacon.fake_lamp": "Fake Lamp",
+  "block.decobeacon.deco_beacon": "Deco Beacon",
+  "block.decobeacon.deco_beacon_ghost": "Ghost Deco Beacon",
+  "block.decobeacon.deco_beacon_fake": "Fake Beacon",
+  "block.decobeacon.deco_beacon_fake_ghost": "Fake Beacon (Ghost)",
+
+  "itemGroup.decobeacon.deco_beacon": "DECO BEACONS",
+
+  "item.decobeacon.fake_steak.tooltip.shift": "Burn it",
+  "item.decobeacon.fake_steak.tooltip": "The Steak That Is Fake (Press §eSHIFT§r)",
+
+  "block.decobeacon.fake_block.tooltip.shift": "Walk through it",
+  "item.decobeacon.fake_block.tooltip": "The Block That Is Fake (Press §eSHIFT§r)",
+
+  "block.decobeacon.fake_cota.tooltip.shift": "is fake Terracota",
+  "block.decobeacon.fake_cota.tooltip": "(Press §eSHIFT§r)"
+}
