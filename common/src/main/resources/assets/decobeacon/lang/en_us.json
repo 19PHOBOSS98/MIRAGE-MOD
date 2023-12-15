@@ -1,19 +1,13 @@
 {
-  "item.decobeacon.fake_steak": "Fake Steak",
-  "block.decobeacon.fake_lamp": "Fake Lamp",
   "block.decobeacon.deco_beacon": "Deco Beacon",
   "block.decobeacon.deco_beacon_ghost": "Ghost Deco Beacon",
   "block.decobeacon.deco_beacon_fake": "Fake Beacon",
-  "block.decobeacon.deco_beacon_fake_ghost": "Fake Beacon (Ghost)",
+  "block.decobeacon.deco_beacon_fake_ghost": "Ghost Fake Beacon",
 
   "itemGroup.decobeacon.deco_beacon": "DECO BEACONS",
 
-  "item.decobeacon.fake_steak.tooltip.shift": "Burn it",
-  "item.decobeacon.fake_steak.tooltip": "The Steak That Is Fake (Press §eSHIFT§r)",
+  "block.decobeacon.notghost.tooltip": "Beam stops at solid blocks",
 
-  "block.decobeacon.fake_block.tooltip.shift": "Walk through it",
-  "item.decobeacon.fake_block.tooltip": "The Block That Is Fake (Press §eSHIFT§r)",
-
-  "block.decobeacon.fake_cota.tooltip.shift": "is fake Terracota",
-  "block.decobeacon.fake_cota.tooltip": "(Press §eSHIFT§r)"
+  "block.decobeacon.ghost.tooltip": "Beam passes thru solid blocks (Press §eSHIFT§r)",
+  "block.decobeacon.ghost.tooltip.shift": "you can also pass thru it as well!"
 }

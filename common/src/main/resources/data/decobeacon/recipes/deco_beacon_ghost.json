@@ -3,7 +3,7 @@
   "group": "deco_beacon",
   "ingredients": [
     {
-      "item": "minecraft:amethyst_block"
+      "item": "minecraft:amethyst_shard"
     },
     {
       "item": "decobeacon:deco_beacon"
