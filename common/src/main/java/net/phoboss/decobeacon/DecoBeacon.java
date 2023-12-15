@@ -27,16 +27,15 @@ public class DecoBeacon {
     public static class Client {
         @Environment(EnvType.CLIENT)
         public static void initClient() {
-
-            ClientLifecycleEvent.CLIENT_STARTED.register((client) -> {
-                ModRendering.registerAll();
-                LOGGER.info("Client started!");
-            });
-            ClientLifecycleEvent.CLIENT_STOPPING.register((client) -> LOGGER.info("Client stopping!"));
-
-
+            ClientLifecycleEvent.CLIENT_STARTED.register((client) ->
+                {
+                    LOGGER.info("Client starting!");
+                    ModRendering.registerAll();
+                });
+            ClientLifecycleEvent.CLIENT_STOPPING.register((client) ->
+                {
+                    LOGGER.info("Client stopping!");
+                });
         }
     }
-
-
 }

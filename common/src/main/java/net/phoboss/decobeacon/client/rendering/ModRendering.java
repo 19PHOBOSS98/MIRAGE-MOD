@@ -10,7 +10,7 @@ import net.phoboss.decobeacon.blocks.decobeacon.DecoBeaconBlockEntityRenderer;
 public class ModRendering {
 
     public static void registerRenderType() {
-        RenderTypeRegistry.register(RenderLayer.getTranslucent(), ModBlocks.DECO_BEACON.get());
+        RenderTypeRegistry.register(RenderLayer.getTranslucent(),ModBlocks.DECO_BEACON.get());
         RenderTypeRegistry.register(RenderLayer.getTranslucent(),ModBlocks.DECO_BEACON_FAKE.get());
         RenderTypeRegistry.register(RenderLayer.getTranslucent(),ModBlocks.DECO_BEACON_GHOST.get());
         RenderTypeRegistry.register(RenderLayer.getTranslucent(),ModBlocks.DECO_BEACON_GHOST_FAKE.get());

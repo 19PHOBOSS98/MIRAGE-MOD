@@ -13,11 +13,9 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
 import net.phoboss.decobeacon.blocks.ModBlockEntities;
-
 
 import java.util.Arrays;
 import java.util.List;
@@ -31,7 +29,7 @@ public class DecoBeaconBlockEntity extends BlockEntity {
 
     public DecoBeaconBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.DECO_BEACON.get(), pos, state);
-        state.with(DecoBeaconBlock.COLOR,this.prevColorID);
+        //world.setBlockState(pos,state.with(DecoBeaconBlock.COLOR,this.prevColorID),Block.NOTIFY_ALL);
     }
 
     @ExpectPlatform
@@ -82,14 +80,18 @@ public class DecoBeaconBlockEntity extends BlockEntity {
         World world = this.getWorld();
         BlockPos pos = this.getPos();
         boolean active = world.isReceivingRedstonePower(pos);
-        active = this.getCachedState().get(DecoBeaconBlock.ACTIVE_LOW) ? !active : active;
+        active = this.getCachedState().get(DecoBeaconBlock.ACTIVE_LOW) != active;
         return active;
     }
 
     public static void tick(World world, BlockPos pos, BlockState state, DecoBeaconBlockEntity blockEntity) {
         boolean isPowered = blockEntity.isPowered();
         boolean isGhost = blockEntity.isGhost();
-        world.setBlockState(pos,state.with(Properties.LIT,isPowered),Block.NOTIFY_ALL);
+
+        if(!world.isClient()){// note to self only update state properties in server-side
+            world.setBlockState(pos,state.with(Properties.LIT,isPowered),Block.NOTIFY_ALL);
+        }
+
         int curColorID = state.get(DecoBeaconBlock.COLOR);
         int i = pos.getX();
         int j = pos.getY();
@@ -112,7 +114,7 @@ public class DecoBeaconBlockEntity extends BlockEntity {
 
         DecoBeamSegment decoBeamSegment = blockEntity.segmentsBuffer.isEmpty()
                 ? null
-                : (DecoBeamSegment) blockEntity.segmentsBuffer.get(blockEntity.segmentsBuffer.size() - 1);
+                : blockEntity.segmentsBuffer.get(blockEntity.segmentsBuffer.size() - 1);
 
         int worldSurface = world.getTopY(Heightmap.Type.WORLD_SURFACE, i, k);
         boolean opaqueBlockDetected = false;
@@ -161,11 +163,11 @@ public class DecoBeaconBlockEntity extends BlockEntity {
             }
         }
 
-        opaqueBlockDetected = isGhost ? false : opaqueBlockDetected;
+        opaqueBlockDetected = !isGhost && opaqueBlockDetected;
 
         if (blockEntity.prevY >= worldSurface || opaqueBlockDetected) {
             blockEntity.prevY = world.getBottomY() - 1;
-            if (!opaqueBlockDetected){
+            if (!opaqueBlockDetected && !blockEntity.segmentsBuffer.isEmpty()){
                 blockEntity.segmentsBuffer.get(blockEntity.segmentsBuffer.size()-1).overrideHeight(1024);
             }
 

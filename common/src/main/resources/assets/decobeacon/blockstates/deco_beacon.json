@@ -3,9 +3,6 @@
     "color=0,lit=true": {
       "model": "decobeacon:block/decobeacon/deco_beacon_0_lit"
     },
-    "color=0,lit=true": {
-      "model": "decobeacon:block/decobeacon/deco_beacon_0_lit"
-    },
     "color=1,lit=true": {
       "model": "decobeacon:block/decobeacon/deco_beacon_1_lit"
     },
