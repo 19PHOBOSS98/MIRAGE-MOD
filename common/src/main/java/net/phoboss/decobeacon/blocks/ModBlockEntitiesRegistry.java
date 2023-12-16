@@ -13,8 +13,7 @@ public class ModBlockEntitiesRegistry {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(DecoBeacon.MOD_ID, Registry.BLOCK_ENTITY_TYPE_KEY);
 
     public static <T extends BlockEntityType> RegistrySupplier<T> registerBlockEntities(String name, Supplier<T> block){
-        RegistrySupplier<T> toReturn = BLOCK_ENTITIES.register(name,block);
-        return toReturn;
+        return BLOCK_ENTITIES.register(name,block);
     }
 
     public static void registerAll() {
