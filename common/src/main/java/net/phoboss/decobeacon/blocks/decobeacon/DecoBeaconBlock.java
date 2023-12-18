@@ -19,49 +19,59 @@ import net.minecraft.util.DyeColor;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import net.phoboss.decobeacon.blocks.ModBlockEntities;
+import net.phoboss.decobeacon.blocks.omnibeacon.OmniBeaconBlockEntity;
 import org.jetbrains.annotations.Nullable;
 
 public class DecoBeaconBlock extends BlockWithEntity implements BlockEntityProvider, Stainable  {
-    public static final BooleanProperty ACTIVE_LOW = BooleanProperty.of("active");
-
     public static final IntProperty COLOR = IntProperty.of("color",0,15);
 
     public DecoBeaconBlock(Settings settings) {
         super(settings);
-        this.setDefaultState(getDefaultState().with(ACTIVE_LOW, false).with(COLOR, 0).with(Properties.LIT, false));
+        this.setDefaultState(getDefaultState().with(COLOR, 0).with(Properties.LIT, false));
     }
 
     @Override
     protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-        builder.add(ACTIVE_LOW)
-                .add(COLOR)
+        builder.add(COLOR)
                 .add(Properties.LIT);
     }
 
+
     @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+    public ActionResult onUse(BlockState state,
+                              World world,
+                              BlockPos pos,
+                              PlayerEntity player,
+                              Hand hand,
+                              BlockHitResult hit) {
         Item mainHandItem = player.getMainHandStack().getItem();
         if(hand == Hand.MAIN_HAND){
-            //player.sendMessage(new LiteralText("BlockPos: "+pos+"\nWorld: "+world+"\nBlockState: "+state+"\n"),false);
             if(!world.isClient()){
-                    if(mainHandItem instanceof DyeItem itemDye){
-                        world.setBlockState(pos,state.with(COLOR,itemDye.getColor().getId()),Block.NOTIFY_ALL);
-                        return ActionResult.SUCCESS;
+                if(mainHandItem instanceof DyeItem itemDye){
+                    world.setBlockState(pos,state.with(COLOR,itemDye.getColor().getId()),Block.NOTIFY_ALL);
+                    return ActionResult.SUCCESS;
 
-                    }else if(mainHandItem == Items.AIR){
-                        int delta = player.isSneaking() ? -1 : 1;
-                        int currentColor = Math.floorMod((state.get(COLOR) + delta),16);
-                        world.setBlockState(pos,state.with(COLOR,currentColor),Block.NOTIFY_ALL);
-                        return ActionResult.SUCCESS;
+                }else if(mainHandItem == Items.AIR){
+                    int delta = player.isSneaking() ? -1 : 1;
+                    int currentColor = Math.floorMod((state.get(COLOR) + delta),16);
+                    world.setBlockState(pos,state.with(COLOR,currentColor),Block.NOTIFY_ALL);
+                    return ActionResult.SUCCESS;
 
-                    }else if(mainHandItem == Items.REDSTONE_TORCH){
+                }else if(mainHandItem == Items.REDSTONE_TORCH){
+                    DecoBeaconBlockEntity blockEntity = (DecoBeaconBlockEntity) world.getBlockEntity(pos);
+                    blockEntity.setActiveLow(!blockEntity.isActiveLow());
+                    return ActionResult.SUCCESS;
 
-                        world.setBlockState(pos,state.with(ACTIVE_LOW,!state.get(ACTIVE_LOW)),Block.NOTIFY_ALL);
-                        return ActionResult.SUCCESS;
-                    }
+                }else if(mainHandItem == Items.SOUL_TORCH){
+                    DecoBeaconBlockEntity blockEntity = (DecoBeaconBlockEntity) world.getBlockEntity(pos);
+                    blockEntity.setTransparent(!blockEntity.isTransparent());
+                    return ActionResult.SUCCESS;
+
+                }
             }
         }
         return ActionResult.PASS;
@@ -72,9 +82,6 @@ public class DecoBeaconBlock extends BlockWithEntity implements BlockEntityProvi
 
         NbtCompound nbtCompound = new NbtCompound();
 
-        if (state.get(ACTIVE_LOW) != null) {
-            nbtCompound.putString(ACTIVE_LOW.getName(), String.valueOf(state.get(ACTIVE_LOW)));
-        }
         if (state.get(COLOR) != null) {
             nbtCompound.putString(COLOR.getName(), String.valueOf(state.get(COLOR)));
         }

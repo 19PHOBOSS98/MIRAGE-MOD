@@ -1,4 +1,4 @@
-package net.phoboss.decobeacon.blocks.decobeacon;
+package net.phoboss.decobeacon.blocks.omnibeacon;
 
 import net.minecraft.client.render.*;
 import net.minecraft.client.render.block.entity.BlockEntityRenderer;
@@ -6,38 +6,48 @@ import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.*;
+import net.phoboss.decobeacon.blocks.decobeacon.DecoBeaconBlockEntity;
 
 import java.util.List;
 
-public class DecoBeaconBlockEntityRenderer implements BlockEntityRenderer<DecoBeaconBlockEntity> {
+public class OmniBeaconBlockEntityRenderer implements BlockEntityRenderer<OmniBeaconBlockEntity> {
     public static final Identifier BEAM_TEXTURE = new Identifier("textures/entity/beacon_beam.png");
     public static final int MAX_BEAM_HEIGHT = 1024;
-    public DecoBeaconBlockEntityRenderer(BlockEntityRendererFactory.Context ctx) {
+    public OmniBeaconBlockEntityRenderer(BlockEntityRendererFactory.Context ctx) {
     }
 
     @Override
-    public void render(DecoBeaconBlockEntity entity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {
+    public void render(OmniBeaconBlockEntity entity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {
         if (!entity.isPowered()) {
             return;
         }
 
         long l = entity.getWorld().getTime();
-        List<DecoBeaconBlockEntity.DecoBeamSegment> list = entity.getDecoBeamSegments();
-        int k = 0;
+        List<OmniBeaconBlockEntity.OmniBeamSegment> list = entity.getOmniBeamSegments();
+        if(list.isEmpty()){
+            return;
+        }
+        float k = 0;
 
-        for(int m = 0; m < list.size(); ++m) {
-            DecoBeaconBlockEntity.DecoBeamSegment decoBeamSegment = (DecoBeaconBlockEntity.DecoBeamSegment)list.get(m);
-            //renderBeam(matrices, vertexConsumers, tickDelta, l, k, m == list.size() - 1 ? 1024 : decoBeamSegment.getHeight(), decoBeamSegment.getColor());
-            renderBeam(matrices, vertexConsumers, tickDelta, l, k, decoBeamSegment.getHeight(), decoBeamSegment.getColor());
-            k += decoBeamSegment.getHeight();
+        OmniBeaconBlockEntity.OmniBeamSegment omniBeamSegment = (OmniBeaconBlockEntity.OmniBeamSegment)list.get(0);
+        renderBeam(matrices, vertexConsumers, tickDelta, l, k, list.size() == 1 ? omniBeamSegment.getHeight() : omniBeamSegment.getHeight()-0.5f, omniBeamSegment.getColor(),entity.getBeamDirection());
+        k += omniBeamSegment.getHeight()-0.5f;
+
+        for(int m = 1; m < list.size(); ++m) {
+            omniBeamSegment = (OmniBeaconBlockEntity.OmniBeamSegment)list.get(m);
+            renderBeam(matrices, vertexConsumers, tickDelta, l, k,
+                    m == list.size() - 1 ? omniBeamSegment.getHeight()+0.5f : omniBeamSegment.getHeight(), omniBeamSegment.getColor(),entity.getBeamDirection());
+            k += omniBeamSegment.getHeight();
         }
     }
 
     private static void renderBeam(
-            MatrixStack matrices, VertexConsumerProvider vertexConsumers, float tickDelta, long worldTime, int yOffset, int maxY, float[] color
+            MatrixStack matrices, VertexConsumerProvider vertexConsumers, float tickDelta, long worldTime, float yOffset, float maxY, float[] color,Vec3f beamDirection
     ) {
-        renderBeam(matrices, vertexConsumers, BEAM_TEXTURE, tickDelta, 1.0F, worldTime, yOffset, maxY, color, 0.2F, 0.25F);
+        renderBeam(matrices, vertexConsumers, BEAM_TEXTURE, tickDelta, 1.0F, worldTime, yOffset, maxY, color, 0.2F, 0.25F,beamDirection);
     }
+
+
     public static void renderBeam(
             MatrixStack matrices,
             VertexConsumerProvider vertexConsumers,
@@ -45,15 +55,18 @@ public class DecoBeaconBlockEntityRenderer implements BlockEntityRenderer<DecoBe
             float tickDelta,
             float heightScale,
             long worldTime,
-            int yOffset,
-            int maxY,
+            float yOffset,
+            float maxY,
             float[] color,
             float innerRadius,
-            float outerRadius
+            float outerRadius,
+            Vec3f beamDirection
     ) {
-        int i = yOffset + maxY;
+        float i = yOffset + maxY;
         matrices.push();
-        matrices.translate(0.5, 0.0, 0.5);
+        matrices.translate(0.5, 0.5, 0.5);
+        //matrices.multiply(Vec3f.POSITIVE_X.getDegreesQuaternion(180.0F));
+        matrices.multiply(getQuatFrom2Vectors(new Vec3f(0,1,0), beamDirection));
         float f = (float)Math.floorMod(worldTime, 40) + tickDelta;
         float g = maxY < 0 ? f : -f;
         float h = MathHelper.fractionalPart(g * 0.2F - (float)MathHelper.floor(g * 0.1F));
@@ -61,7 +74,10 @@ public class DecoBeaconBlockEntityRenderer implements BlockEntityRenderer<DecoBe
         float k = color[1];
         float l = color[2];
         matrices.push();
-        matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(f * 2.25F - 45.0F));
+        //matrices.translate(0,0,0);
+        //matrices.multiply(Vec3f.POSITIVE_X.getDegreesQuaternion(90.0F));
+        //matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(f * 2.25F - 45.0F));
+
         float m = 0.0F;
         float p = 0.0F;
         float q = -innerRadius;
@@ -94,7 +110,7 @@ public class DecoBeaconBlockEntityRenderer implements BlockEntityRenderer<DecoBe
                 x,
                 w
         );
-        matrices.pop();
+        //matrices.pop();
         m = -outerRadius;
         float n = -outerRadius;
         p = -outerRadius;
@@ -126,6 +142,7 @@ public class DecoBeaconBlockEntityRenderer implements BlockEntityRenderer<DecoBe
                 w
         );
         matrices.pop();
+        matrices.pop();
     }
 
     private static void renderBeamLayer(
@@ -135,8 +152,8 @@ public class DecoBeaconBlockEntityRenderer implements BlockEntityRenderer<DecoBe
             float green,
             float blue,
             float alpha,
-            int yOffset,
-            int height,
+            float yOffset,
+            float height,
             float x1,
             float z1,
             float x2,
@@ -167,8 +184,8 @@ public class DecoBeaconBlockEntityRenderer implements BlockEntityRenderer<DecoBe
             float green,
             float blue,
             float alpha,
-            int yOffset,
-            int height,
+            float yOffset,
+            float height,
             float x1,
             float z1,
             float x2,
@@ -196,7 +213,7 @@ public class DecoBeaconBlockEntityRenderer implements BlockEntityRenderer<DecoBe
             float green,
             float blue,
             float alpha,
-            int y,
+            float y,
             float x,
             float z,
             float u,
@@ -211,10 +228,10 @@ public class DecoBeaconBlockEntityRenderer implements BlockEntityRenderer<DecoBe
                 .next();
     }
 
-    public boolean rendersOutsideBoundingBox(DecoBeaconBlockEntity beaconBlockEntity) {
+    public boolean rendersOutsideBoundingBox(OmniBeaconBlockEntity beaconBlockEntity) {
         return true;
     }
-    public boolean isInRenderDistance(DecoBeaconBlockEntity beaconBlockEntity, Vec3d vec3d) {
+    public boolean isInRenderDistance(OmniBeaconBlockEntity beaconBlockEntity, Vec3d vec3d) {
         return Vec3d.ofCenter(beaconBlockEntity.getPos()).multiply(1.0, 0.0, 1.0).isInRange(vec3d.multiply(1.0, 0.0, 1.0), (double)this.getRenderDistance());
     }
 
@@ -222,5 +239,28 @@ public class DecoBeaconBlockEntityRenderer implements BlockEntityRenderer<DecoBe
     @Override
     public int getRenderDistance() {
         return 256;
+    }
+
+    public static Quaternion getQuatFrom2Vectors(Vec3f fromVec,Vec3f toVec){
+        Quaternion q;
+        Vec3f cp = fromVec;
+        double dp = fromVec.dot(toVec);
+
+        if (dp<-0.9999999) {//opposite direction
+            if(cp.equals(new Vec3f(0,1,0))){
+                return new Quaternion(new Vec3f(1,0,0), 180, true);
+            }
+            cp.cross(new Vec3f(0,1,0));
+            q = new Quaternion(cp, 180, true);
+            q.normalize();
+            return q;
+        }else if(dp>0.9999999) {//parallel ...enough
+            return new Quaternion(0,0,0,1);
+        }
+        cp.cross(toVec);
+        float qw = (float) (Math.sqrt(fromVec.dot(fromVec) * toVec.dot(toVec)) + dp);
+        q = new Quaternion(cp.getX(),cp.getY(),cp.getZ(),qw);
+        q.normalize();
+        return q;
     }
 }

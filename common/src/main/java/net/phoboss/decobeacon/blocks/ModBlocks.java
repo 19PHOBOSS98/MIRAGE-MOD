@@ -20,6 +20,8 @@ import net.minecraft.world.World;
 import net.phoboss.decobeacon.DecoBeacon;
 import net.phoboss.decobeacon.blocks.decobeacon.DecoBeaconBlock;
 import net.phoboss.decobeacon.blocks.decobeaconghost.DecoBeaconGhostBlock;
+import net.phoboss.decobeacon.blocks.omnibeacon.OmniBeaconBlock;
+import net.phoboss.decobeacon.blocks.omnibeaconghost.OmniBeaconGhostBlock;
 import net.phoboss.decobeacon.items.ModItemGroups;
 import net.phoboss.decobeacon.items.ModItems;
 import org.jetbrains.annotations.Nullable;
@@ -81,6 +83,35 @@ public class ModBlocks {
                     .setTooltipKey("block.decobeacon.ghost.tooltip")
                     .setTooltipShiftKey("block.decobeacon.ghost.tooltip.shift")
     );
+
+    public static final RegistrySupplier<Block> OMNI_BEACON = ModBlocks.registerBlock(
+            "omni_beacon",
+            () -> new OmniBeaconBlock(AbstractBlock
+                    .Settings.of(Material.GLASS, MapColor.DIAMOND_BLUE)
+                    .luminance((state) -> state.get(Properties.LIT) ? 15 : 0)
+                    .nonOpaque()),
+            ModItemGroups.DECO_BEACON,
+            new ModBlocks.ExtraItemSettings()
+                    //.setStackLimit(1)
+                    .setTooltipKey("block.decobeacon.omni_beacon.tooltip")
+                    .setTooltipShiftKey("block.decobeacon.omni_beacon.tooltip.shift")
+    );
+
+    public static final RegistrySupplier<Block> OMNI_BEACON_GHOST = ModBlocks.registerBlock(
+            "omni_beacon_ghost",
+            () -> new OmniBeaconGhostBlock(AbstractBlock
+                    .Settings.of(Material.GLASS, MapColor.DIAMOND_BLUE)
+                    .luminance((state) -> state.get(Properties.LIT) ? 15 : 0)
+                    .nonOpaque()
+                    .noCollision()),
+            ModItemGroups.DECO_BEACON,
+            new ModBlocks.ExtraItemSettings()
+                    //.setStackLimit(1)
+                    .setTooltipKey("block.decobeacon.omni_beacon.tooltip")
+                    .setTooltipShiftKey("block.decobeacon.omni_beacon.tooltip.shift")
+    );
+
+
 
     public static <T extends Block> RegistrySupplier<T> registerBlock(String name, Supplier<T> block, ItemGroup group){
         RegistrySupplier<T> toReturn = BLOCKS.register(name,block);
