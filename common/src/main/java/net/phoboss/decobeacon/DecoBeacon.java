@@ -20,6 +20,7 @@ public class DecoBeacon {
         ModBlocks.registerAll();
         ModBlockEntities.registerAll();
         ModItems.registerAll();
+
         EnvExecutor.runInEnv(Env.CLIENT, () -> DecoBeacon.Client::initClient);
     }
 
