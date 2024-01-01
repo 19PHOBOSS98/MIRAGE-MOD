@@ -4,30 +4,30 @@ loaderVersion = "[40,)"
 license = "MIT"
 
 [[mods]]
-modId = "decobeacon"
+modId = "mirage"
 version = "${version}"
-displayName = "Deco Beacon"
+displayName = "Mirage"
 authors = "Me!"
 description = '''
 This is an example description! Tell everyone what your mod is about!
 '''
 #logoFile = ""
 
-[[dependencies.decobeacon]]
+[[dependencies.mirage]]
 modId = "forge"
 mandatory = true
 versionRange = "[40,)"
 ordering = "NONE"
 side = "BOTH"
 
-[[dependencies.decobeacon]]
+[[dependencies.mirage]]
 modId = "minecraft"
 mandatory = true
 versionRange = "[1.18.2,)"
 ordering = "NONE"
 side = "BOTH"
 
-[[dependencies.decobeacon]]
+[[dependencies.mirage]]
 modId = "architectury"
 mandatory = true
 versionRange = "[4.11.93,)"

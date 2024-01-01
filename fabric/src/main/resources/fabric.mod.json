@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "id": "decobeacon",
+  "id": "mirage",
   "version": "${version}",
-  "name": "Deco Beacon",
+  "name": "Mirage",
   "description": "This is an example description! Tell everyone what your mod is about!",
   "authors": [
     "Me!"
@@ -12,11 +12,11 @@
     "sources": "https://github.com/FabricMC/fabric-example-mod"
   },
   "license": "MIT",
-  "icon": "assets/decobeacon/icon.png",
+  "icon": "assets/mirage/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [
-      "net.phoboss.decobeacon.fabric.DecoBeaconFabric"
+      "net.phoboss.mirage.fabric.MirageFabric"
     ]
   },
   "depends": {

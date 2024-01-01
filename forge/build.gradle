@@ -36,6 +36,10 @@ repositories {
             includeGroup "curse.maven"
         }
     }
+    maven {
+        name "tterrag maven"
+        url "https://maven.tterrag.com/"
+    }
     mavenCentral()
 }
 
@@ -56,6 +60,7 @@ dependencies {
     modRuntimeOnly "curse.maven:oculus-581495:4578744"
     modRuntimeOnly "curse.maven:rubidium-574856:4494903"
     //modRuntimeOnly "curse.maven:embedium-908741:4949961"
+    modRuntimeOnly "curse.maven:framedblocks-441647:4567924"
 }
 
 processResources {
