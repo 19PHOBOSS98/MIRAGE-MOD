@@ -27,7 +27,8 @@ public class MirageBlock extends BlockWithEntity implements BlockEntityProvider 
 
                 if(mainHandItem instanceof BlockItem bi){
                     MirageBlockEntity entity = (MirageBlockEntity) world.getBlockEntity(pos);
-                        entity.setCurrentBlock(bi.getBlock());
+                    entity.setCurrentBlock(bi.getBlock());
+                    entity.setScheme();
                     return ActionResult.SUCCESS;
 
                 }

@@ -40,6 +40,17 @@ repositories {
         name "tterrag maven"
         url "https://maven.tterrag.com/"
     }
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Modrinth"
+                url = "https://api.modrinth.com/maven"
+            }
+        }
+        filter {
+            includeGroup "maven.modrinth"
+        }
+    }
     mavenCentral()
 }
 
@@ -61,6 +72,7 @@ dependencies {
     modRuntimeOnly "curse.maven:rubidium-574856:4494903"
     //modRuntimeOnly "curse.maven:embedium-908741:4949961"
     modRuntimeOnly "curse.maven:framedblocks-441647:4567924"
+    //modRuntimeOnly "maven.modrinth:LNytGWDc:kvDi1uyh" //https://modrinth.com/mod/create/version/1.18.2-0.5.1.f
 }
 
 processResources {
