@@ -1,6 +1,7 @@
 package net.phoboss.mirage.blocks.mirageprojector.fabric;
 
 import net.minecraft.block.BlockState;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -21,7 +22,7 @@ public class MirageBlockEntityRendererImpl extends MirageBlockEntityRenderer {
         return new MirageBlockEntityRendererImpl(ctx);
     }
 
-    public void renderFakeBlock(BlockState state, BlockPos referencePos, BlockRenderView world, MatrixStack matrices, VertexConsumerProvider vertexConsumers, boolean cull, Random random){
+    public void renderFakeBlock(BlockState state, BlockPos referencePos, BlockRenderView world, MatrixStack matrices, VertexConsumerProvider vertexConsumers, boolean cull, Random random, BlockEntity blockEntity){
         RenderLayer rl = RenderLayers.getEntityBlockLayer(state,true);
         blockRenderManager.renderBlock(state,referencePos,world,matrices,
                 vertexConsumers.getBuffer(rl),cull,random);

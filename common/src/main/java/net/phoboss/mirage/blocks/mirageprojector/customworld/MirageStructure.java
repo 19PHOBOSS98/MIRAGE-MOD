@@ -1,0 +1,134 @@
+package net.phoboss.mirage.blocks.mirageprojector.customworld;
+
+import com.google.common.collect.Lists;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.decoration.AbstractDecorationEntity;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtDouble;
+import net.minecraft.nbt.NbtList;
+import net.minecraft.structure.Structure;
+import net.minecraft.structure.StructurePlacementData;
+import net.minecraft.util.BlockMirror;
+import net.minecraft.util.BlockRotation;
+import net.minecraft.util.math.BlockBox;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.ServerWorldAccess;
+import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
+import java.util.Random;
+
+public class MirageStructure extends Structure {
+
+    private final List<StructureEntityInfo> mirageEntities = Lists.newArrayList();
+    private final List<StructureEntityInfo> mirageBlockEntities = Lists.newArrayList();
+
+    public MirageStructure() {
+        super();
+    }
+
+    @Override
+    public void readNbt(NbtCompound nbt) {
+        super.readNbt(nbt);
+        NbtList entitiesNbt = nbt.getList("entities", 10);
+        for(int j = 0; j < entitiesNbt.size(); ++j) {
+            NbtCompound compoundtag = entitiesNbt.getCompound(j);
+            NbtList listtag3 = compoundtag.getList("pos", 6);
+            Vec3d vec3 = new Vec3d(listtag3.getDouble(0), listtag3.getDouble(1), listtag3.getDouble(2));
+            NbtList listtag4 = compoundtag.getList("blockPos", 3);
+            BlockPos blockpos = new BlockPos(listtag4.getInt(0), listtag4.getInt(1), listtag4.getInt(2));
+            if (compoundtag.contains("nbt")) {
+                NbtCompound compoundtag1 = compoundtag.getCompound("nbt");
+                this.mirageEntities.add(new StructureEntityInfo(vec3, blockpos, compoundtag1));
+            }
+        }
+    }
+
+    public void readMirageNbt(NbtCompound nbt, BlockPos projectorPos, MirageWorld mirageWorld) {
+        readNbt(nbt);
+        NbtList blocksNbt = nbt.getList("blocks", 10);
+        for(int i = 0; i < blocksNbt.size(); i++) {
+            NbtCompound blockNbt = blocksNbt.getCompound(i);
+            NbtList blockPosNbt = blockNbt.getList("pos", 3);
+            BlockPos posNbt = projectorPos.add(new BlockPos(
+                    blockPosNbt.getInt(0),
+                    blockPosNbt.getInt(1),
+                    blockPosNbt.getInt(2)
+            ));
+            BlockState fakeState = mirageWorld.getMirageStateNEntities().get(posNbt.asLong()).blockState;
+            BlockEntity fakeBlockEntity = BlockEntity.createFromNbt(projectorPos,fakeState,blockNbt.getCompound("nbt"));
+            if (fakeBlockEntity != null) {
+                mirageWorld.setMirageBlockEntity(projectorPos,fakeBlockEntity);
+            }
+        }
+    }
+
+    @Override
+    public boolean place(ServerWorldAccess world, BlockPos pos, BlockPos pivot, StructurePlacementData placementData, Random random, int flags) {
+        boolean result =  super.place(world, pos, pivot, placementData, random, flags);
+
+        if (!placementData.shouldIgnoreEntities()) {
+            spawnEntities((World)world, pos,placementData.getMirror(),placementData.getRotation(),placementData.getPosition(),placementData.getBoundingBox(), placementData.shouldInitializeMobs());
+        }
+
+        if (world instanceof MirageWorld mw){
+            mw.cullBlocks();
+            mw.resetWorldForBlockEntities();
+        }
+
+        return result;
+    }
+
+    public void spawnEntities(World world, BlockPos pos, BlockMirror blockMirror, BlockRotation blockRotation, BlockPos pivot, @Nullable BlockBox area, boolean initializeMobs) {
+        this.mirageEntities.forEach((structureEntityInfo)->{
+            BlockPos blockPosOff = transformAround(structureEntityInfo.blockPos, blockMirror, blockRotation, pivot).add(pos);
+            if(area != null && !area.contains(blockPosOff)){
+                return;
+            }
+
+            NbtCompound nbtCompound = structureEntityInfo.nbt.copy();
+            Vec3d entityPosRotated = new Vec3d(blockPosOff.getX(),blockPosOff.getY(),blockPosOff.getZ());
+
+            NbtList nbtList = new NbtList();
+            nbtList.add(NbtDouble.of(entityPosRotated.x));
+            nbtList.add(NbtDouble.of(entityPosRotated.y));
+            nbtList.add(NbtDouble.of(entityPosRotated.z));
+            nbtCompound.put("Pos", nbtList);
+            nbtCompound.remove("UUID");
+            EntityType.getEntityFromNbt(nbtCompound,world).ifPresent((entity) -> {
+                float f = entity.applyMirror(blockMirror);
+                f += entity.getYaw() - entity.applyRotation(blockRotation);
+
+                BlockPos entityPos = blockPosOff;
+                if(entity instanceof AbstractDecorationEntity painting){
+                    if(painting.getWidthPixels()>16){
+                        if(blockMirror != BlockMirror.NONE){
+                            BlockPos lookVector = new BlockPos(Direction.fromRotation(f).getVector());
+                            BlockPos lookRight = lookVector.rotate(BlockRotation.CLOCKWISE_90);
+                            entityPos = entityPos.add(lookRight);
+                        }
+                    }
+                }
+
+                entity.refreshPositionAndAngles(entityPos, f, entity.getPitch());
+
+                entity.setYaw(f);
+                entity.prevYaw = f;
+                entity.setPitch(entity.getPitch());
+                entity.prevPitch = entity.getPitch();
+
+                entity.resetPosition();
+
+                if (world instanceof MirageWorld mw) {
+                    mw.spawnMirageEntityAndPassengers(entity);
+                }
+            });
+        });
+
+    }
+}
