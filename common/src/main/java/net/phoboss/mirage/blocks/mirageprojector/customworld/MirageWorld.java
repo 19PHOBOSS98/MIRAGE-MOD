@@ -1,7 +1,9 @@
 package net.phoboss.mirage.blocks.mirageprojector.customworld;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import dev.architectury.injectables.annotations.ExpectPlatform;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockEntityProvider;
 import net.minecraft.block.BlockState;
@@ -10,11 +12,12 @@ import net.minecraft.block.entity.BeaconBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.*;
+import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.RenderLayers;
+import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.BlockRenderManager;
 import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
-import net.minecraft.client.texture.TextureManager;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -31,10 +34,7 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.DynamicRegistryManager;
 import net.minecraft.util.registry.RegistryEntry;
-import net.minecraft.world.BlockRenderView;
-import net.minecraft.world.MutableWorldProperties;
-import net.minecraft.world.ServerWorldAccess;
-import net.minecraft.world.World;
+import net.minecraft.world.*;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.source.BiomeAccess;
 import net.minecraft.world.chunk.ChunkManager;
@@ -45,15 +45,22 @@ import net.minecraft.world.level.ColorResolver;
 import net.minecraft.world.tick.QueryableTickScheduler;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.List;
+import java.util.Random;
 
 public class MirageWorld extends World implements ServerWorldAccess {
+
+    public static MinecraftClient mc = MinecraftClient.getInstance();
+    public static BlockRenderManager blockRenderManager = mc.getBlockRenderManager();
+    public static BlockEntityRenderDispatcher blockEntityRenderDispatcher = mc.getBlockEntityRenderDispatcher();
+    public static EntityRenderDispatcher entityRenderDispatcher = mc.getEntityRenderDispatcher();
+    protected ChunkManager chunkManager;
+
 
     public class StateNEntity {
         public FluidState fluidState;
         public BlockState blockState;
         public BlockEntity blockEntity;
-
         public Entity entity;
         public StateNEntity(BlockState blockState,BlockEntity blockEntity) {
             this.blockState = blockState;
@@ -71,35 +78,39 @@ public class MirageWorld extends World implements ServerWorldAccess {
         public StateNEntity(Entity entity) {
             this.entity = entity;
         }
-        public void addEntity(Entity entity){
-            this.entity = entity;
+    }
+
+    public class BlockWEntity {
+        public FluidState fluidState;
+        public BlockState blockState;
+        public BlockEntity blockEntity;
+        public BlockWEntity(BlockState blockState,BlockEntity blockEntity) {
+            this.blockState = blockState;
+            this.blockEntity = blockEntity;
+        }
+        public BlockWEntity(BlockState blockState) {
+            this.blockState = blockState;
+        }
+        public BlockWEntity(FluidState fluidState) {
+            this.fluidState = fluidState;
+        }
+        public BlockWEntity(BlockEntity blockEntity) {
+            this.blockEntity = blockEntity;
         }
     }
 
     protected World world;
-
-    protected Map<BlockPos, FluidState> mirageFluidStates;
-    protected Map<BlockPos, BlockState> mirageBlockStates;
-    protected Map<BlockPos, BlockEntity> mirageBlockEntities;
-    protected List<Entity> mirageEntities;
-
+    protected ObjectArrayList<BlockTicker> mirageBlockEntityTickers;
     protected Long2ObjectOpenHashMap<StateNEntity> mirageStateNEntities;
-
-    protected List<BlockTicker> mirageBlockEntityTickers;
-    protected ChunkManager chunkManager;
-    public final TextureManager mirageTextureManager;
-
-    public static MinecraftClient mc = MinecraftClient.getInstance();
-    public static BlockRenderManager blockRenderManager = mc.getBlockRenderManager();
-    public static BlockEntityRenderDispatcher blockEntityRenderDispatcher = mc.getBlockEntityRenderDispatcher();
-    public static EntityRenderDispatcher entityRenderDispatcher = mc.getEntityRenderDispatcher();
-    public static WorldRenderer worldRenderer = mc.worldRenderer;
-    public static GameRenderer gameRenderer = mc.gameRenderer;
+    protected Long2ObjectOpenHashMap<StateNEntity> manualBlocksList;
+    protected Long2ObjectOpenHashMap<StateNEntity> VertexBufferBlocksList;
+    protected Long2ObjectOpenHashMap<BlockWEntity> BERBlocksList;
+    private MirageBufferStorage mirageBufferStorage;
 
     public MirageWorld(MinecraftClient MC) {
-        this(MC.world,MC.getTextureManager());
+        this(MC.world);
     }
-    public MirageWorld(World world,TextureManager textureManager) {
+    public MirageWorld(World world) {
         super((MutableWorldProperties) world.getLevelProperties(),
                 world.getRegistryKey(),
                 world.method_40134(),
@@ -108,20 +119,62 @@ public class MirageWorld extends World implements ServerWorldAccess {
                 world.isDebugWorld(),
                 0);
         this.world = world;
-        this.mirageBlockStates = new HashMap();
-        this.mirageFluidStates = new HashMap();
-        this.mirageBlockEntities = new HashMap();
-        this.mirageBlockEntityTickers = new ArrayList();
-        this.mirageEntities = new ArrayList();
-
+        this.mirageBlockEntityTickers = new ObjectArrayList();
         this.mirageStateNEntities = new Long2ObjectOpenHashMap();
+        this.BERBlocksList = new Long2ObjectOpenHashMap();
+        this.VertexBufferBlocksList = new Long2ObjectOpenHashMap();
+        this.manualBlocksList = new Long2ObjectOpenHashMap();
 
-        this.mirageTextureManager = textureManager;
         setChunkManager(new MirageChunkManager(this));
+
+        this.mirageBufferStorage = new MirageBufferStorage();
     }
 
+    public boolean newlyRefreshedBuffers = true;
+    @ExpectPlatform
+    public static void refreshVertexBuffersIfNeeded(BlockPos projectorPos,MirageWorld mirageWorld){
+        throw new AssertionError();
+    }
+    public static RenderLayer TRANSLUCENT_RENDER_LAYER = RenderLayer.getTranslucent();
+
     public void render(BlockPos projectorPos,float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay){
-        this.mirageStateNEntities.forEach((fakeBlockPosKey,fakeStateNEntity)->{
+        refreshVertexBuffersIfNeeded(projectorPos,this);
+        MatrixStack matrixStack = RenderSystem.getModelViewStack();
+        matrixStack.push();
+        matrixStack.multiplyPositionMatrix(matrices.peek().getPositionMatrix());
+        this.mirageBufferStorage.mirageVertexBuffers.forEach((renderLayer,vertexBuffer)->{
+            renderLayer.startDrawing();
+            vertexBuffer.setShader(matrixStack.peek().getPositionMatrix(), RenderSystem.getProjectionMatrix(),RenderSystem.getShader());
+            renderLayer.endDrawing();
+        });
+        matrixStack.pop();
+
+
+        this.manualBlocksList.forEach((key, block)->{//need to render multi-model-layered translucent blocks (i.e. slime, honey, DecoBeacons etc) manually :(
+            matrices.push();
+            BlockPos fakeBlockPos = BlockPos.fromLong(key);
+            BlockPos relativePos = fakeBlockPos.subtract(projectorPos);
+            matrices.translate(relativePos.getX(),relativePos.getY(),relativePos.getZ());
+            renderMirageBlock(block.blockState, fakeBlockPos, this, matrices, vertexConsumers, true, getRandom());
+            matrices.pop();
+        });
+
+        this.BERBlocksList.forEach((key,block)->{//animated blocks (enchanting table...)
+            matrices.push();
+            BlockPos fakeBlockPos = BlockPos.fromLong(key);
+            BlockPos relativePos = fakeBlockPos.subtract(projectorPos);
+            matrices.translate(relativePos.getX(),relativePos.getY(),relativePos.getZ());
+            renderMirageBlockEntity(block.blockEntity, tickDelta, matrices, vertexConsumers);
+            matrices.pop();
+        });
+    }
+
+    public void initVertexBuffers(BlockPos projectorPos) {
+        this.mirageBufferStorage.reset();
+        MatrixStack matrices = new MatrixStack();
+        VertexConsumerProvider.Immediate vertexConsumers = this.mirageBufferStorage.tempImmediate;
+
+        this.VertexBufferBlocksList.forEach((fakeBlockPosKey,fakeStateNEntity)->{
             BlockPos fakeBlockPos = BlockPos.fromLong(fakeBlockPosKey);
             BlockState fakeBlockState = fakeStateNEntity.blockState;
             BlockEntity fakeBlockEntity = fakeStateNEntity.blockEntity;
@@ -141,60 +194,82 @@ public class MirageWorld extends World implements ServerWorldAccess {
             BlockPos relativePos = fakeBlockPos.subtract(projectorPos);
             matrices.translate(relativePos.getX(),relativePos.getY(),relativePos.getZ());
 
-            if (fakeBlockState != null) {
-                renderMirageBlock(fakeBlockState, fakeBlockPos, this, matrices, vertexConsumers, true, getRandom(), fakeBlockEntity);
-            }
+            markAnimatedSprite(fakeBlockState,this.getRandom());
+
             if (fakeBlockEntity != null) {
-                renderMirageBlockEntity(fakeBlockEntity, tickDelta, matrices, vertexConsumers);
+                renderMirageModelData(fakeBlockState, fakeBlockPos, this, true, getRandom(), fakeBlockEntity, matrices, vertexConsumers);
+                matrices.pop();
+                return;
+            }
+
+            if (fakeBlockState != null) {
+                renderMirageBlock(fakeBlockState, fakeBlockPos, this, matrices, vertexConsumers, true, getRandom());
             }
             matrices.pop();
         });
+
+        this.mirageBufferStorage.copyBufferBuilders(this.mirageBufferStorage.tempImmediate);
+        this.mirageBufferStorage.uploadBufferBuildersToVertexBuffers();
     }
 
     @ExpectPlatform
-    public static void renderMirageBlock(BlockState state, BlockPos referencePos, BlockRenderView world, MatrixStack matrices, VertexConsumerProvider vertexConsumers, boolean cull, Random random, BlockEntity blockEntity){
-        RenderLayer rl = RenderLayers.getEntityBlockLayer(state,true);
-        blockRenderManager.renderBlock(state,referencePos,world,matrices,
-                vertexConsumers.getBuffer(rl),cull,random);
+    public static void markAnimatedSprite(BlockState blockState,Random random){
+        throw new AssertionError();
+    }//WIP Embeddium compat
+    @ExpectPlatform
+    public static boolean isOnTranslucentRenderLayer(BlockState blockState){
+        return RenderLayers.getEntityBlockLayer(blockState,true) == RenderLayer.getTranslucent();
     }
-    public void renderMirageBlockEntity(BlockEntity blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers){
+    @ExpectPlatform
+    public static boolean addToManualRenderList(long blockPosKey,StateNEntity stateNEntity,Long2ObjectOpenHashMap manualRenderTranslucentBlocks){
+        return false;
+    }
+
+    public void initBlockRenderLists() {
+        this.mirageStateNEntities.forEach((blockPosKey,stateNEntity)->{
+            BlockState blockState = stateNEntity.blockState;
+            BlockEntity blockEntity = stateNEntity.blockEntity;
+
+            if(blockEntity != null) {
+                if (blockEntityRenderDispatcher.get(blockEntity)!=null) {
+                    this.BERBlocksList.put(blockPosKey,new BlockWEntity(blockState,blockEntity));
+                }
+                if (isOnTranslucentRenderLayer(blockState)) {
+                    if(addToManualRenderList(blockPosKey,new StateNEntity(blockState,blockEntity), this.manualBlocksList)){//isDecoBeaconBlock
+                        return;
+                    }
+                }
+                this.VertexBufferBlocksList.put(blockPosKey,stateNEntity);
+                return;
+            }
+
+            if(blockState != null) {
+                if (isOnTranslucentRenderLayer(blockState)) {
+                    this.manualBlocksList.put(blockPosKey, new StateNEntity(blockState));
+                    return;
+                }
+            }
+
+            this.VertexBufferBlocksList.put(blockPosKey,stateNEntity);
+        });
+    }
+
+
+    public static void renderMirageBlockEntity(BlockEntity blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers){
         blockEntityRenderDispatcher.render(blockEntity,tickDelta,matrices,vertexConsumers);
     }
-    public void renderMirageEntity(Entity entity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers){
-        this.entityRenderDispatcher.render(entity, 0, 0, 0, entity.getYaw(), tickDelta, matrices, vertexConsumers, this.entityRenderDispatcher.getLight(entity, tickDelta));
+    public static void renderMirageEntity(Entity entity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers){
+        entityRenderDispatcher.render(entity, 0, 0, 0, entity.getYaw(), tickDelta, matrices, vertexConsumers, entityRenderDispatcher.getLight(entity, tickDelta));
     }
 
-    static final Direction[] DIRECTIONS = Direction.values();
-    public boolean isBlockFullySurrounded(long key,Long2ObjectOpenHashMap<StateNEntity> fullScheme){
-        for(Direction dir: DIRECTIONS) {
-            BlockPos pos = BlockPos.fromLong(key).add(dir.getVector());
-            long keyPos = pos.asLong();
-            StateNEntity neighbor = fullScheme.getOrDefault(keyPos, null);
-            if (neighbor == null) {
-                return false;
-            }
-            BlockState blockState = neighbor.blockState;
-            if (blockState == null) {
-                return false;
-            }
-            boolean isNeighborTransparent = !(blockState.isOpaqueFullCube(this, pos) || blockState.isSolidBlock(this, pos));
-            if (isNeighborTransparent) {
-                return false;
-            }
-        }
-        return true;
+    public static void renderMirageBlock(BlockState state, BlockPos referencePos, BlockRenderView world, MatrixStack matrices, VertexConsumerProvider vertexConsumerProvider, boolean cull, Random random){
+        RenderLayer rl = RenderLayers.getEntityBlockLayer(state,true);
+        blockRenderManager.renderBlock(state,referencePos,world,matrices,
+                vertexConsumerProvider.getBuffer(rl),cull,random);
     }
-
-    public void cullBlocks(){
-        ArrayList<Long> removeKeys = new ArrayList<>();
-        this.mirageStateNEntities.forEach((key,entry)->{
-            if (isBlockFullySurrounded(key,this.mirageStateNEntities)) {
-                removeKeys.add(key);
-            }
-        });
-        for (long key:removeKeys) {
-            this.mirageStateNEntities.remove(key);
-        }
+    @ExpectPlatform
+    public static void renderMirageModelData(BlockState state, BlockPos referencePos, BlockRenderView world, boolean cull, Random random, BlockEntity blockEntity, MatrixStack matrices, VertexConsumerProvider vertexConsumerProvider){
+        throw new AssertionError();
     }
 
     public void resetWorldForBlockEntities(){
@@ -207,7 +282,6 @@ public class MirageWorld extends World implements ServerWorldAccess {
 
     public void setMirageBlockEntity(BlockPos pos,BlockEntity blockEntity) {
         long key = pos.asLong();
-        //this.mirageBlockEntities.put(pos,blockEntity);
         if (this.mirageStateNEntities.containsKey(key)) {
             StateNEntity mirageStateNEntity = this.mirageStateNEntities.get(key);
             mirageStateNEntity.blockEntity = blockEntity;
@@ -248,11 +322,6 @@ public class MirageWorld extends World implements ServerWorldAccess {
         return true;
     }
 
-    @Override
-    public boolean setBlockState(BlockPos pos, BlockState state, int flags, int maxUpdateDepth) {
-        return setBlockState(pos, state);
-    }
-
     public boolean spawnEntity(BlockPos pos, Entity entity) {
         long key = pos.asLong();
         if (this.mirageStateNEntities.containsKey(key)) {
@@ -265,8 +334,12 @@ public class MirageWorld extends World implements ServerWorldAccess {
     }
 
     @Override
+    public boolean setBlockState(BlockPos pos, BlockState state, int flags, int maxUpdateDepth) {
+        return setBlockState(pos, state);
+    }
+
+    @Override
     public boolean spawnEntity(Entity entity) {
-        //this.mirageEntities.add(entity);
         spawnEntity(entity.getBlockPos(), entity);
         return true;
     }
@@ -274,7 +347,7 @@ public class MirageWorld extends World implements ServerWorldAccess {
     @Override
     public void addBlockEntity(BlockEntity blockEntity) {
         BlockPos pos = blockEntity.getPos();
-        blockEntity.setWorld(this);//needs to be done AFTER setBlockState here to properly initialize FramedBlockEntity ModelData
+        blockEntity.setWorld(this);//needs to be done AFTER setBlockState(...) here to properly initialize FramedBlockEntity ModelData
         setMirageBlockEntity(pos,blockEntity);
         setMirageBlockEntityTicker(pos,blockEntity);
     }
@@ -292,7 +365,6 @@ public class MirageWorld extends World implements ServerWorldAccess {
         if(entry.blockEntity == null) {
             return null;
         }
-        //entry.blockEntity.setWorld(this);
         return entry.blockEntity;
     }
     @Override
@@ -316,10 +388,6 @@ public class MirageWorld extends World implements ServerWorldAccess {
             }
         }
         return Blocks.AIR.getDefaultState().getFluidState();
-    }
-
-    public Long2ObjectOpenHashMap<StateNEntity> getMirageStateNEntities(){
-        return this.mirageStateNEntities;
     }
 
     @Override
@@ -370,31 +438,14 @@ public class MirageWorld extends World implements ServerWorldAccess {
         }
     }
 
-/*
-    //I didn't look into it any further
-    public void tickFluids(){
-        synchronized (this.mirageFluidStates) {
-            this.mirageFluidStates.forEach((pos, fluidState) -> {
-                fluidState.onScheduledTick(this, pos);
-            });
-        }
-    }
-
- */
-
 
 
     public void tick(){
-        //tickFluids();
         tickBlockEntities();
     }
 
     public void setChunkManager(ChunkManager chunkManager) {
         this.chunkManager = chunkManager;
-    }
-
-    public World getWorld(){
-        return this.world;
     }
 
     @Override
@@ -442,9 +493,6 @@ public class MirageWorld extends World implements ServerWorldAccess {
         return this.world.getBrightness(direction, shaded);
     }
 
-
-
-
     @Override
     public void updateListeners(BlockPos pos, BlockState oldState, BlockState newState, int flags) {
         this.world.updateListeners(pos,oldState,newState,flags);
@@ -465,7 +513,20 @@ public class MirageWorld extends World implements ServerWorldAccess {
         return this.world.getScoreboard();
     }
 
+    @Override
+    public QueryableTickScheduler<Block> getBlockTickScheduler() {
+        return world.getBlockTickScheduler();
+    }
 
+    @Override
+    public QueryableTickScheduler<Fluid> getFluidTickScheduler() {
+        return world.getFluidTickScheduler();
+    }
+
+    @Override
+    public int getTopY(Heightmap.Type heightmap, int x, int z) {
+        return 512;
+    }
 
     @Override
     public void playSoundFromEntity(@Nullable PlayerEntity except, Entity entity, SoundEvent sound, SoundCategory category, float volume, float pitch) {
@@ -498,8 +559,6 @@ public class MirageWorld extends World implements ServerWorldAccess {
 
     }
 
-
-
     @Override
     public RecipeManager getRecipeManager() {
         return null;
@@ -511,18 +570,6 @@ public class MirageWorld extends World implements ServerWorldAccess {
     }
 
     @Override
-    public QueryableTickScheduler<Block> getBlockTickScheduler() {
-        return world.getBlockTickScheduler();
-    }
-
-    @Override
-    public QueryableTickScheduler<Fluid> getFluidTickScheduler() {
-        return world.getFluidTickScheduler();
-    }
-
-
-
-    @Override
     public void syncWorldEvent(@Nullable PlayerEntity player, int eventId, BlockPos pos, int data) {
 
     }
@@ -531,12 +578,5 @@ public class MirageWorld extends World implements ServerWorldAccess {
     public void emitGameEvent(@Nullable Entity entity, GameEvent event, BlockPos pos) {
 
     }
-
-
-
-
-
-
-
 
 }

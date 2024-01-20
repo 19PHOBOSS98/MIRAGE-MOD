@@ -1,5 +1,6 @@
 package net.phoboss.mirage.blocks.mirageprojector.customworld.fabric;
 
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
@@ -23,6 +24,14 @@ public class MirageWorldImpl extends MirageWorld {
         RenderLayer rl = RenderLayers.getEntityBlockLayer(state,true);
         blockRenderManager.renderBlock(state,referencePos,world,matrices,
                 vertexConsumers.getBuffer(rl),cull,random);
+
+    }
+
+    public static boolean addToManualRenderList(long blockPosKey, BlockWEntity blockWEntity, Long2ObjectOpenHashMap manualRenderTranslucentBlocks){
+        /*if(blockWEntity.blockState.getBlock() instanceof DecoBeaconBlock){
+            manualRenderTranslucentBlocks.put(blockPosKey, blockWEntity);
+        }*/
+        return false;
     }
 
 }

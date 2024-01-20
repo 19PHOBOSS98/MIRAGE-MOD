@@ -16,7 +16,7 @@ public class ModRendering {
     }
 
     public static void registerBlockEntityRenderers() {
-        BlockEntityRendererRegistry.register(ModBlockEntities.MIRAGE_BLOCK.get(), MirageBlockEntityRenderer::createPlatformSpecific);
+        BlockEntityRendererRegistry.register(ModBlockEntities.MIRAGE_BLOCK.get(), MirageBlockEntityRenderer::new);
     }
 
     public static void registerAll() {

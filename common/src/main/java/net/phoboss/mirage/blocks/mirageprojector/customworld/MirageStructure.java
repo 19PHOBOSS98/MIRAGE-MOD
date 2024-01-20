@@ -1,8 +1,6 @@
 package net.phoboss.mirage.blocks.mirageprojector.customworld;
 
 import com.google.common.collect.Lists;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.decoration.AbstractDecorationEntity;
 import net.minecraft.nbt.NbtCompound;
@@ -26,7 +24,6 @@ import java.util.Random;
 public class MirageStructure extends Structure {
 
     private final List<StructureEntityInfo> mirageEntities = Lists.newArrayList();
-    private final List<StructureEntityInfo> mirageBlockEntities = Lists.newArrayList();
 
     public MirageStructure() {
         super();
@@ -49,25 +46,6 @@ public class MirageStructure extends Structure {
         }
     }
 
-    public void readMirageNbt(NbtCompound nbt, BlockPos projectorPos, MirageWorld mirageWorld) {
-        readNbt(nbt);
-        NbtList blocksNbt = nbt.getList("blocks", 10);
-        for(int i = 0; i < blocksNbt.size(); i++) {
-            NbtCompound blockNbt = blocksNbt.getCompound(i);
-            NbtList blockPosNbt = blockNbt.getList("pos", 3);
-            BlockPos posNbt = projectorPos.add(new BlockPos(
-                    blockPosNbt.getInt(0),
-                    blockPosNbt.getInt(1),
-                    blockPosNbt.getInt(2)
-            ));
-            BlockState fakeState = mirageWorld.getMirageStateNEntities().get(posNbt.asLong()).blockState;
-            BlockEntity fakeBlockEntity = BlockEntity.createFromNbt(projectorPos,fakeState,blockNbt.getCompound("nbt"));
-            if (fakeBlockEntity != null) {
-                mirageWorld.setMirageBlockEntity(projectorPos,fakeBlockEntity);
-            }
-        }
-    }
-
     @Override
     public boolean place(ServerWorldAccess world, BlockPos pos, BlockPos pivot, StructurePlacementData placementData, Random random, int flags) {
         boolean result =  super.place(world, pos, pivot, placementData, random, flags);
@@ -77,8 +55,8 @@ public class MirageStructure extends Structure {
         }
 
         if (world instanceof MirageWorld mw){
-            mw.cullBlocks();
             mw.resetWorldForBlockEntities();
+            mw.initBlockRenderLists();
         }
 
         return result;
