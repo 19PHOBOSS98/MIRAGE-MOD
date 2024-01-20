@@ -59,31 +59,26 @@ repositories {
 
 dependencies {
     forge "net.minecraftforge:forge:${rootProject.forge_version}"
-    // Remove the next line if you don't want to depend on the API
     modApi "dev.architectury:architectury-forge:${rootProject.architectury_version}"
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionForge")) { transitive = false }
 
-    //still need to figure out why it keeps looking for META_INF/version
-    //modRuntimeOnly "org.valkyrienskies:valkyrienskies-118-forge:${rootProject.vs2_version}"
-    //modRuntimeOnly "thedarkcolour:kotlinforforge:${rootProject.forge_kotlin_version}"
-    //modRuntimeOnly "curse.maven:kotlinforforge-351264:4513187"
-    //modRuntimeOnly "curse.maven:vs2-258371:4794551"
-
+    modCompileOnlyApi "curse.maven:oculus-581495:4578744"
     modRuntimeOnly "curse.maven:oculus-581495:4578744"
-    //modRuntimeOnly "curse.maven:rubidium-574856:4494903"
-    //modRuntimeOnly "curse.maven:embedium-908741:4949961"
+    modCompileOnlyApi "orge.embeddedt:embeddium:0.2.17-git.d06d0fa.dirtymc1.18.2"
     modRuntimeOnly "orge.embeddedt:embeddium:0.2.17-git.d06d0fa.dirtymc1.18.2"
+
+
     modRuntimeOnly "curse.maven:framedblocks-441647:4567924"
-    //modRuntimeOnly "maven.modrinth:LNytGWDc:kvDi1uyh" //https://modrinth.com/mod/create/version/1.18.2-0.5.1.f
-    modRuntimeOnly "curse.maven:minemaresurection-596719:3831181"
-    modRuntimeOnly "curse.maven:cmdcam-251244:4426920"
-    modRuntimeOnly "curse.maven:creativecore-257814:4629846"
 
-    //modRuntimeOnly "maven.modrinth:dCKRaeBC:n1r2HSiJ" //https://modrinth.com/mod/forgematica/version/0.1.7-mc1.18.2
-    //modRuntimeOnly "maven.modrinth:SKI34J7B:OlZM9y9Z" //https://modrinth.com/mod/mafglib/version/0.1.7-mc1.18.2
 
+    //modRuntimeOnly "curse.maven:minemaresurection-596719:3831181"
+    //modRuntimeOnly "curse.maven:cmdcam-251244:4426920"
+    //modRuntimeOnly "curse.maven:creativecore-257814:4629846"
+
+
+    modCompileOnlyApi "net.phoboss:decobeacon:0.0.1-1.18.2"
     modRuntimeOnly "net.phoboss:decobeacon:0.0.1-1.18.2"
 }
 
