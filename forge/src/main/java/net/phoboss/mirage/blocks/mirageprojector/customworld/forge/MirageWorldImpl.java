@@ -5,7 +5,6 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.irisshaders.iris.api.v0.IrisApi;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -16,6 +15,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockRenderView;
+import net.minecraft.world.World;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.model.data.IModelData;
 import net.phoboss.decobeacon.blocks.decobeacon.DecoBeaconBlock;
@@ -26,8 +26,8 @@ import java.util.Random;
 
 public class MirageWorldImpl extends MirageWorld {
 
-    public MirageWorldImpl(MinecraftClient MC) {
-        super(MC);
+    public MirageWorldImpl(World world) {
+        super(world);
     }
 
     public static void markAnimatedSprite(BlockState blockState,Random random){
@@ -63,9 +63,10 @@ public class MirageWorldImpl extends MirageWorld {
             return;
         }
         Boolean shadersEnabled = IrisApi.getInstance().getConfig().areShadersEnabled();
-        if(shadersEnabled && mirageWorld.newlyRefreshedBuffers){
+        if(shadersEnabled && mirageWorld.newlyRefreshedBuffers || mirageWorld.overideRefreshBuffer){
             mirageWorld.initVertexBuffers(projectorPos);
             mirageWorld.newlyRefreshedBuffers = false;
+            mirageWorld.overideRefreshBuffer = false;
         }
         if(!shadersEnabled){
             mirageWorld.newlyRefreshedBuffers = true;

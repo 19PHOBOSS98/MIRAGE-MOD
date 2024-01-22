@@ -1,28 +1,40 @@
 package net.phoboss.mirage.blocks.mirageprojector;
 
+import dev.architectury.platform.Platform;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtIo;
 import net.minecraft.network.Packet;
 import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.phoboss.mirage.Mirage;
 import net.phoboss.mirage.blocks.ModBlockEntities;
 import net.phoboss.mirage.blocks.mirageprojector.customworld.MirageStructure;
 import net.phoboss.mirage.blocks.mirageprojector.customworld.MirageWorld;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
+import java.nio.file.Path;
+
 
 public class MirageBlockEntity extends BlockEntity {
+    private MirageWorld mirageWorld;
+
+
+
     public MirageBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MIRAGE_BLOCK.get(), pos, state);
     }
 
-    public void loadScheme(NbtCompound nbt) {
+    public void loadScheme() {
+        loadScheme(this.schematic);
+    }
+    public void loadScheme(NbtCompound nbt) {//add BlockRotation, BlockMirror and PosOffset arguments
 
         BlockPos pos = getPos();
         MirageStructure fakeStructure = new MirageStructure();
@@ -36,16 +48,53 @@ public class MirageBlockEntity extends BlockEntity {
 
         //structurePlacementData.setMirror(BlockMirror.FRONT_BACK);
         //structurePlacementData.setMirror(BlockMirror.LEFT_RIGHT);
+        this.mirageWorld.clearMirageWorld();
         fakeStructure.place(this.mirageWorld,pos,pos,structurePlacementData,this.mirageWorld.random,Block.NOTIFY_ALL);
-        this.mirageWorld.initVertexBuffers(pos);
+        if(world.isClient()) {
+            //this.mirageWorld.initVertexBuffers(pos); //the RenderDispatchers "camera" subojects are null on initialization causing errors
+            this.mirageWorld.overideRefreshBuffer = true;   //I couldn't find an Architectury API Event similar to Fabric's "ClientBlockEntityEvents.BLOCK_ENTITY_LOAD" event
+                                                            //I could try to use @ExpectPlatform but I couldn't find anything similar for Forge either.
+                                                            // So I just let the BER.render(...) method decide when's the best time to refresh the VertexBuffers :)
+        }
     }
 
+    @Override
+    public void setWorld(World world) {
+        super.setWorld(world);
+        setMirageWorld(world);
+    }
 
-    private MirageWorld mirageWorld = new MirageWorld(MinecraftClient.getInstance());
-    public void setSchemeFromNBT(NbtCompound nbt) {
-        loadScheme(nbt);
+    public void setMirageWorld(World world) {
+        this.mirageWorld = new MirageWorld(world);
+        //loadScheme();
+    }
+
+    public static Path SCHEMATICS_FOLDER = Platform.getGameFolder().resolve("schematics");//change to serverside folder directory
+    public static NbtCompound getBuildingNbt(String structureName) {
+        try {
+            File nbtFile = SCHEMATICS_FOLDER.resolve(structureName+".nbt").toFile();
+            NbtCompound nbtc = NbtIo.readCompressed(nbtFile);
+            return nbtc;
+        }
+        catch (Exception e) {
+            System.out.println(e);
+            return null;
+        }
+    }
+
+    public static NbtCompound schematic = new NbtCompound();
+    public void setSchematicMirage(String filename) {
+        if(filename ==""){
+            return;
+        }
+        this.schematic = getBuildingNbt(filename);
+        if(this.schematic==null){
+            return;
+        }
+        loadScheme(this.schematic);
         markDirty();
     }
+
 
     public MirageWorld getMirageWorld() {
         return this.mirageWorld;
@@ -53,12 +102,23 @@ public class MirageBlockEntity extends BlockEntity {
 
     @Override
     protected void writeNbt(NbtCompound nbt) {
+        nbt.put("scheme",this.schematic);
         super.writeNbt(nbt);
     }
 
     @Override
     public void readNbt(NbtCompound nbt) {
         super.readNbt(nbt);
+        try{
+        this.schematic = (NbtCompound) nbt.get("scheme");
+
+            if(this.mirageWorld == null) {
+                return;
+            }
+            loadScheme(this.schematic);
+        }catch (Exception e){
+            Mirage.LOGGER.error("[MIRAGE MOD]: Error on readNBT: ",e);
+        }
     }
 
     @Nullable
@@ -69,17 +129,22 @@ public class MirageBlockEntity extends BlockEntity {
 
     @Override
     public NbtCompound toInitialChunkDataNbt() {
-        return createNbt();
+        NbtCompound nbt = super.toInitialChunkDataNbt();
+        writeNbt(nbt);
+        return nbt;
     }
 
     @Override
     public void markDirty() {
+        world.updateListeners(getPos(), getCachedState(), getCachedState(), Block.NOTIFY_ALL);
         super.markDirty();
-        world.updateListeners(getPos(), getCachedState(), getCachedState(), Block.NOTIFY_LISTENERS);
     }
 
     public static void tick(World world, BlockPos pos, BlockState state, MirageBlockEntity entity) {
-        entity.mirageWorld.tick();
+        MirageWorld mirageWorld = entity.mirageWorld;
+        if(mirageWorld != null) {
+            entity.mirageWorld.tick();
+        }
     }
 
 }

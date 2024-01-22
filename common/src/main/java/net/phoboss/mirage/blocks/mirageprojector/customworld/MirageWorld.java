@@ -100,16 +100,13 @@ public class MirageWorld extends World implements ServerWorldAccess {
     }
 
     protected World world;
-    protected ObjectArrayList<BlockTicker> mirageBlockEntityTickers;
+    public ObjectArrayList<BlockTicker> mirageBlockEntityTickers;
     protected Long2ObjectOpenHashMap<StateNEntity> mirageStateNEntities;
     protected Long2ObjectOpenHashMap<StateNEntity> manualBlocksList;
     protected Long2ObjectOpenHashMap<StateNEntity> VertexBufferBlocksList;
     protected Long2ObjectOpenHashMap<BlockWEntity> BERBlocksList;
     private MirageBufferStorage mirageBufferStorage;
 
-    public MirageWorld(MinecraftClient MC) {
-        this(MC.world);
-    }
     public MirageWorld(World world) {
         super((MutableWorldProperties) world.getLevelProperties(),
                 world.getRegistryKey(),
@@ -131,6 +128,7 @@ public class MirageWorld extends World implements ServerWorldAccess {
     }
 
     public boolean newlyRefreshedBuffers = true;
+    public boolean overideRefreshBuffer = true;
     @ExpectPlatform
     public static void refreshVertexBuffersIfNeeded(BlockPos projectorPos,MirageWorld mirageWorld){
         throw new AssertionError();
@@ -148,7 +146,6 @@ public class MirageWorld extends World implements ServerWorldAccess {
             renderLayer.endDrawing();
         });
         matrixStack.pop();
-
 
         this.manualBlocksList.forEach((key, block)->{//need to render multi-model-layered translucent blocks (i.e. slime, honey, DecoBeacons etc) manually :(
             matrices.push();
@@ -225,6 +222,26 @@ public class MirageWorld extends World implements ServerWorldAccess {
         return false;
     }
 
+    public void clearMirageWorld(){
+        synchronized (this.mirageStateNEntities){
+            this.mirageStateNEntities.clear();
+        }
+        synchronized (this.BERBlocksList){
+            this.BERBlocksList.clear();
+        }
+        synchronized (this.VertexBufferBlocksList){
+            this.VertexBufferBlocksList.clear();
+        }
+        synchronized (this.manualBlocksList){
+            this.manualBlocksList.clear();
+        }
+        synchronized (this.mirageBufferStorage){
+            this.mirageBufferStorage = new MirageBufferStorage();
+        }
+        synchronized (this.mirageBlockEntityTickers){
+            this.mirageBlockEntityTickers.clear();
+        }
+    }
     public void initBlockRenderLists() {
         this.mirageStateNEntities.forEach((blockPosKey,stateNEntity)->{
             BlockState blockState = stateNEntity.blockState;
@@ -292,9 +309,6 @@ public class MirageWorld extends World implements ServerWorldAccess {
     public void setFluidState(BlockPos pos,BlockState state){
         long key = pos.asLong();
         FluidState fluidState = state.getFluidState();
-        /*if(!fluidState.isEmpty()){
-            this.mirageFluidStates.put(pos,fluidState);
-        }*/
         if (this.mirageStateNEntities.containsKey(key)) {
             StateNEntity mirageStateNEntity = this.mirageStateNEntities.get(key);
             mirageStateNEntity.fluidState = fluidState;
@@ -418,6 +432,9 @@ public class MirageWorld extends World implements ServerWorldAccess {
         }
     }
     public void setMirageBlockEntityTicker(BlockPos pos,BlockEntity blockEntity) {
+        if(!this.world.isClient()){//world doesn't save when adding entityTickers in server side
+            return;
+        }
         if(blockEntity instanceof BeaconBlockEntity){//Don't want to have players having a portable beacon buff :)
             return;
         }
@@ -431,11 +448,9 @@ public class MirageWorld extends World implements ServerWorldAccess {
     }
 
     public void tickBlockEntities(){
-        synchronized (this.mirageBlockEntityTickers){
-            this.mirageBlockEntityTickers.forEach((blockTicker)->{
-                blockTicker.blockEntityTicker.tick(this,blockTicker.blockPos,blockTicker.blockState,blockTicker.blockEntity);
-            });
-        }
+        this.mirageBlockEntityTickers.forEach((blockTicker)->{
+            blockTicker.blockEntityTicker.tick(this,blockTicker.blockPos,blockTicker.blockState,blockTicker.blockEntity);
+        });
     }
 
 
