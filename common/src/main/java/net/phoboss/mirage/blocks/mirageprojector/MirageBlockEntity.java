@@ -35,7 +35,12 @@ public class MirageBlockEntity extends BlockEntity {
         loadScheme(this.schematic);
     }
     public void loadScheme(NbtCompound nbt) {//add BlockRotation, BlockMirror and PosOffset arguments
-
+        if(!world.isClient()) {
+            return;
+        }
+        if(nbt == null){
+            return;
+        }
         BlockPos pos = getPos();
         MirageStructure fakeStructure = new MirageStructure();
         fakeStructure.readNbt(nbt);
@@ -50,12 +55,12 @@ public class MirageBlockEntity extends BlockEntity {
         //structurePlacementData.setMirror(BlockMirror.LEFT_RIGHT);
         this.mirageWorld.clearMirageWorld();
         fakeStructure.place(this.mirageWorld,pos,pos,structurePlacementData,this.mirageWorld.random,Block.NOTIFY_ALL);
-        if(world.isClient()) {
-            //this.mirageWorld.initVertexBuffers(pos); //the RenderDispatchers "camera" subojects are null on initialization causing errors
-            this.mirageWorld.overideRefreshBuffer = true;   //I couldn't find an Architectury API Event similar to Fabric's "ClientBlockEntityEvents.BLOCK_ENTITY_LOAD" event
+
+        //this.mirageWorld.initVertexBuffers(pos); //the RenderDispatchers "camera" subojects are null on initialization causing errors
+        this.mirageWorld.overideRefreshBuffer = true;   //I couldn't find an Architectury API Event similar to Fabric's "ClientBlockEntityEvents.BLOCK_ENTITY_LOAD" event
                                                             //I could try to use @ExpectPlatform but I couldn't find anything similar for Forge either.
                                                             // So I just let the BER.render(...) method decide when's the best time to refresh the VertexBuffers :)
-        }
+
     }
 
     @Override
@@ -65,8 +70,9 @@ public class MirageBlockEntity extends BlockEntity {
     }
 
     public void setMirageWorld(World world) {
-        this.mirageWorld = new MirageWorld(world);
-        //loadScheme();
+        if(world.isClient()){
+            this.mirageWorld = new MirageWorld(world);
+        }
     }
 
     public static Path SCHEMATICS_FOLDER = Platform.getGameFolder().resolve("schematics");//change to serverside folder directory
@@ -89,9 +95,10 @@ public class MirageBlockEntity extends BlockEntity {
         }
         this.schematic = getBuildingNbt(filename);
         if(this.schematic==null){
-            return;
+            this.schematic = new NbtCompound();
+        }else{
+            loadScheme();
         }
-        loadScheme(this.schematic);
         markDirty();
     }
 
@@ -102,7 +109,7 @@ public class MirageBlockEntity extends BlockEntity {
 
     @Override
     protected void writeNbt(NbtCompound nbt) {
-        nbt.put("scheme",this.schematic);
+        nbt.put("scheme",this.schematic == null ? new NbtCompound():this.schematic);
         super.writeNbt(nbt);
     }
 
@@ -115,7 +122,7 @@ public class MirageBlockEntity extends BlockEntity {
             if(this.mirageWorld == null) {
                 return;
             }
-            loadScheme(this.schematic);
+            loadScheme();
         }catch (Exception e){
             Mirage.LOGGER.error("[MIRAGE MOD]: Error on readNBT: ",e);
         }

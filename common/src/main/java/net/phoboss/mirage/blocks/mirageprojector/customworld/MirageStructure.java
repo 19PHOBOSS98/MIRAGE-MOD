@@ -16,6 +16,7 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.ServerWorldAccess;
 import net.minecraft.world.World;
+import net.phoboss.mirage.blocks.mirageprojector.MirageBlockEntityRenderer;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -56,7 +57,7 @@ public class MirageStructure extends Structure {
 
         if (world instanceof MirageWorld mw){
             mw.resetWorldForBlockEntities();
-            mw.initBlockRenderLists();
+            MirageBlockEntityRenderer.initBlockRenderLists(mw);
         }
 
         return result;
