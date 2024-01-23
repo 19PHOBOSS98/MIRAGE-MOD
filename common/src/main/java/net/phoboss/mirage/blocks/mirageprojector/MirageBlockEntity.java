@@ -14,8 +14,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.phoboss.mirage.Mirage;
 import net.phoboss.mirage.blocks.ModBlockEntities;
-import net.phoboss.mirage.blocks.mirageprojector.customworld.MirageStructure;
-import net.phoboss.mirage.blocks.mirageprojector.customworld.MirageWorld;
+import net.phoboss.mirage.client.rendering.customworld.MirageStructure;
+import net.phoboss.mirage.client.rendering.customworld.MirageWorld;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -56,10 +56,10 @@ public class MirageBlockEntity extends BlockEntity {
         this.mirageWorld.clearMirageWorld();
         fakeStructure.place(this.mirageWorld,pos,pos,structurePlacementData,this.mirageWorld.random,Block.NOTIFY_ALL);
 
-        //this.mirageWorld.initVertexBuffers(pos); //the RenderDispatchers "camera" subojects are null on initialization causing errors
+        //this.mirageWorld.initVertexBuffers(pos);      //the RenderDispatchers "camera" subojects are null on initialization causing errors
         this.mirageWorld.overideRefreshBuffer = true;   //I couldn't find an Architectury API Event similar to Fabric's "ClientBlockEntityEvents.BLOCK_ENTITY_LOAD" event
-                                                            //I could try to use @ExpectPlatform but I couldn't find anything similar for Forge either.
-                                                            // So I just let the BER.render(...) method decide when's the best time to refresh the VertexBuffers :)
+                                                        //I could try to use @ExpectPlatform but I couldn't find anything similar for Forge either.
+                                                        // So I just let the BER.render(...) method decide when's the best time to refresh the VertexBuffers :)
 
     }
 
@@ -88,7 +88,7 @@ public class MirageBlockEntity extends BlockEntity {
         }
     }
 
-    public static NbtCompound schematic = new NbtCompound();
+    public NbtCompound schematic = new NbtCompound();
     public void setSchematicMirage(String filename) {
         if(filename ==""){
             return;

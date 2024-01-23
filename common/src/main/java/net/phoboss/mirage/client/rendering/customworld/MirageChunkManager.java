@@ -1,4 +1,4 @@
-package net.phoboss.mirage.blocks.mirageprojector.customworld;
+package net.phoboss.mirage.client.rendering.customworld;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;

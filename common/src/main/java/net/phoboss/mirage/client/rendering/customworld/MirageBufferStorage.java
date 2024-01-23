@@ -1,4 +1,4 @@
-package net.phoboss.mirage.blocks.mirageprojector.customworld;
+package net.phoboss.mirage.client.rendering.customworld;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import net.minecraft.client.gl.VertexBuffer;
@@ -17,7 +17,7 @@ import java.util.SortedMap;
 
 public class MirageBufferStorage {
     public Object2ObjectLinkedOpenHashMap<RenderLayer, BufferBuilder> mirageEntityLayerBuffers;
-    public Object2ObjectLinkedOpenHashMap<RenderLayer, VertexBuffer> mirageVertexBuffers = new Object2ObjectLinkedOpenHashMap();
+    public Object2ObjectLinkedOpenHashMap<RenderLayer, VertexBuffer> mirageVertexBuffers = new Object2ObjectLinkedOpenHashMap<>();
 
     private final static List<RenderLayer> renderLayerList = getRenderLayerList();
     public VertexConsumerProvider.Immediate tempImmediate;
@@ -45,9 +45,8 @@ public class MirageBufferStorage {
         layers.add(RenderLayer.getEntityGlint());
         layers.add(RenderLayer.getDirectEntityGlint());
         layers.add(RenderLayer.getWaterMask());
-        for (RenderLayer renderLayer : RenderLayer.getBlockLayers()) {
-            layers.add(renderLayer);
-        }
+
+        layers.addAll(RenderLayer.getBlockLayers());
         return layers;
     }
     public SortedMap<RenderLayer, BufferBuilder> setBufferBuilders(){
@@ -64,7 +63,7 @@ public class MirageBufferStorage {
 
 
     public void copyBufferBuilders(VertexConsumerProvider.Immediate immediate){
-        for(RenderLayer renderLayer: this.renderLayerList){
+        for(RenderLayer renderLayer: renderLayerList){
             this.mirageEntityLayerBuffers.put(renderLayer,(BufferBuilder) immediate.getBuffer(renderLayer));
         }
     }
