@@ -35,27 +35,20 @@ public class MirageBlock extends BlockWithEntity implements BlockEntityProvider 
         ItemStack mainHandItemStack = player.getMainHandStack();
         Item mainHandItem = player.getMainHandStack().getItem();
         if(hand == Hand.MAIN_HAND){
-            String fileName = "miragetestingwentities";
 
             MirageBlockEntity blockEntity = (MirageBlockEntity) world.getBlockEntity(pos);
+            String fileName = "miragetestingwentities";
+            /*
+            String fileName = "test";
+            String fileName = "redstonetest";
+            String fileName = "mirage1";
+            String fileName = "paintings";
+            String fileName = "portal1";
+            String fileName = "warp";
+            */
             loadMirage(blockEntity,fileName);
-            if(world.isClient()) {
-                /*
-                loadMirage(world,pos,"test");
-                loadMirage(world,pos,"redstonetest");
-                loadMirage(world,pos,"mirage1");
-                loadMirage(world,pos,"paintings");
-                loadMirage(world,pos,"portal1");
-                loadMirage(world,pos,"warp");
-                */
-            }else{
-                /*
-                NbtCompound mirageNBT = new NbtCompound();
-                mirageNBT.putString("file",fileName);
-                mirageNBT.put("pos",NbtHelper.fromBlockPos(pos));
-                //TEMPnew SyncMirageClientsS2CPacket(mirageNBT).sendToChunkListeners(world.getWorldChunk(pos));
-                */
-            }
+
+
             return ActionResult.SUCCESS;
         }
         return ActionResult.PASS;

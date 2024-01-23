@@ -23,16 +23,35 @@ import java.nio.file.Path;
 
 
 public class MirageBlockEntity extends BlockEntity {
+    public static Path SCHEMATICS_FOLDER = Platform.getGameFolder().resolve("schematics");
+    public NbtCompound schematic = new NbtCompound();
     private MirageWorld mirageWorld;
 
+    public NbtCompound getSchematic(){
+        if(this.schematic == null){
+            return new NbtCompound();
+        }
+        return this.schematic;
+    }
 
+    public boolean setSchematic(NbtCompound nbtCompound){
+        if(nbtCompound == null){
+            this.schematic = new NbtCompound();
+            markDirty();
+            return true;
+        }else{
+            this.schematic = nbtCompound;
+            markDirty();
+            return false;
+        }
+    }
 
     public MirageBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MIRAGE_BLOCK.get(), pos, state);
     }
 
     public void loadScheme() {
-        loadScheme(this.schematic);
+        loadScheme(getSchematic());
     }
     public void loadScheme(NbtCompound nbt) {//add BlockRotation, BlockMirror and PosOffset arguments
         if(!world.isClient()) {
@@ -75,7 +94,7 @@ public class MirageBlockEntity extends BlockEntity {
         }
     }
 
-    public static Path SCHEMATICS_FOLDER = Platform.getGameFolder().resolve("schematics");//change to serverside folder directory
+
     public static NbtCompound getBuildingNbt(String structureName) {
         try {
             File nbtFile = SCHEMATICS_FOLDER.resolve(structureName+".nbt").toFile();
@@ -88,15 +107,12 @@ public class MirageBlockEntity extends BlockEntity {
         }
     }
 
-    public NbtCompound schematic = new NbtCompound();
+
     public void setSchematicMirage(String filename) {
         if(filename ==""){
             return;
         }
-        this.schematic = getBuildingNbt(filename);
-        if(this.schematic==null){
-            this.schematic = new NbtCompound();
-        }else{
+        if(setSchematic(getBuildingNbt(filename))){
             loadScheme();
         }
         markDirty();
@@ -109,7 +125,7 @@ public class MirageBlockEntity extends BlockEntity {
 
     @Override
     protected void writeNbt(NbtCompound nbt) {
-        nbt.put("scheme",this.schematic == null ? new NbtCompound():this.schematic);
+        nbt.put("scheme",getSchematic());
         super.writeNbt(nbt);
     }
 
@@ -117,8 +133,7 @@ public class MirageBlockEntity extends BlockEntity {
     public void readNbt(NbtCompound nbt) {
         super.readNbt(nbt);
         try{
-        this.schematic = (NbtCompound) nbt.get("scheme");
-
+            setSchematic((NbtCompound) nbt.get("scheme"));
             if(this.mirageWorld == null) {
                 return;
             }
