@@ -77,9 +77,9 @@ dependencies {
     //COMMENTOUT when running in server//
     modRuntimeOnly "curse.maven:oculus-581495:4578744"
     modRuntimeOnly "orge.embeddedt:embeddium:0.2.17-git.d06d0fa.dirtymc1.18.2"
-    modRuntimeOnly "curse.maven:minemaresurection-596719:3831181"
+    /*modRuntimeOnly "curse.maven:minemaresurection-596719:3831181"
     modRuntimeOnly "curse.maven:cmdcam-251244:4426920"
-    modRuntimeOnly "curse.maven:creativecore-257814:4629846"
+    modRuntimeOnly "curse.maven:creativecore-257814:4629846"*/
 
 }
 
