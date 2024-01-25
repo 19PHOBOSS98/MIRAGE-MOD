@@ -103,8 +103,8 @@ public class MirageWorld extends World implements ServerWorldAccess {
     public ObjectArrayList<BlockTicker> mirageBlockEntityTickers;
     protected Long2ObjectOpenHashMap<StateNEntity> mirageStateNEntities;
     protected Long2ObjectOpenHashMap<StateNEntity> manualBlocksList;
-    protected Long2ObjectOpenHashMap<StateNEntity> VertexBufferBlocksList;
-    protected Long2ObjectOpenHashMap<BlockWEntity> BERBlocksList;
+    protected Long2ObjectOpenHashMap<StateNEntity> vertexBufferBlocksList;
+    protected Long2ObjectOpenHashMap<BlockWEntity> bERBlocksList;
     private MirageBufferStorage mirageBufferStorage;
 
     public MirageWorld(World world) {
@@ -118,8 +118,8 @@ public class MirageWorld extends World implements ServerWorldAccess {
         this.world = world;
         this.mirageBlockEntityTickers = new ObjectArrayList();
         this.mirageStateNEntities = new Long2ObjectOpenHashMap();
-        this.BERBlocksList = new Long2ObjectOpenHashMap();
-        this.VertexBufferBlocksList = new Long2ObjectOpenHashMap();
+        this.bERBlocksList = new Long2ObjectOpenHashMap();
+        this.vertexBufferBlocksList = new Long2ObjectOpenHashMap();
         this.manualBlocksList = new Long2ObjectOpenHashMap();
 
         setChunkManager(new MirageChunkManager(this));
@@ -156,7 +156,7 @@ public class MirageWorld extends World implements ServerWorldAccess {
             matrices.pop();
         });
 
-        this.BERBlocksList.forEach((key,block)->{//animated blocks (enchanting table...)
+        this.bERBlocksList.forEach((key, block)->{//animated blocks (enchanting table...)
             matrices.push();
             BlockPos fakeBlockPos = BlockPos.fromLong(key);
             BlockPos relativePos = fakeBlockPos.subtract(projectorPos);
@@ -171,7 +171,7 @@ public class MirageWorld extends World implements ServerWorldAccess {
         MatrixStack matrices = new MatrixStack();
         VertexConsumerProvider.Immediate vertexConsumers = this.mirageBufferStorage.tempImmediate;
 
-        this.VertexBufferBlocksList.forEach((fakeBlockPosKey,fakeStateNEntity)->{
+        this.vertexBufferBlocksList.forEach((fakeBlockPosKey, fakeStateNEntity)->{
             BlockPos fakeBlockPos = BlockPos.fromLong(fakeBlockPosKey);
             BlockState fakeBlockState = fakeStateNEntity.blockState;
             BlockEntity fakeBlockEntity = fakeStateNEntity.blockEntity;
@@ -226,11 +226,11 @@ public class MirageWorld extends World implements ServerWorldAccess {
         synchronized (this.mirageStateNEntities){
             this.mirageStateNEntities.clear();
         }
-        synchronized (this.BERBlocksList){
-            this.BERBlocksList.clear();
+        synchronized (this.bERBlocksList){
+            this.bERBlocksList.clear();
         }
-        synchronized (this.VertexBufferBlocksList){
-            this.VertexBufferBlocksList.clear();
+        synchronized (this.vertexBufferBlocksList){
+            this.vertexBufferBlocksList.clear();
         }
         synchronized (this.manualBlocksList){
             this.manualBlocksList.clear();
@@ -249,14 +249,14 @@ public class MirageWorld extends World implements ServerWorldAccess {
 
             if(blockEntity != null) {
                 if (blockEntityRenderDispatcher.get(blockEntity)!=null) {
-                    this.BERBlocksList.put(blockPosKey,new BlockWEntity(blockState,blockEntity));
+                    this.bERBlocksList.put(blockPosKey,new BlockWEntity(blockState,blockEntity));
                 }
                 if (isOnTranslucentRenderLayer(blockState)) {
                     if(addToManualRenderList(blockPosKey,new StateNEntity(blockState,blockEntity), this.manualBlocksList)){//isDecoBeaconBlock
                         return;
                     }
                 }
-                this.VertexBufferBlocksList.put(blockPosKey,stateNEntity);
+                this.vertexBufferBlocksList.put(blockPosKey,stateNEntity);
                 return;
             }
 
@@ -267,7 +267,7 @@ public class MirageWorld extends World implements ServerWorldAccess {
                 }
             }
 
-            this.VertexBufferBlocksList.put(blockPosKey,stateNEntity);
+            this.vertexBufferBlocksList.put(blockPosKey,stateNEntity);
         });
     }
 
