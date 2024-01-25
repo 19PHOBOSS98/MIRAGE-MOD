@@ -9,5 +9,6 @@
   "block.mirage.ghost.tooltip.shift": "you can also pass thru it as well!",
 
   "block.mirage.omni_beacon.tooltip": "redirect beam (Press §eSHIFT§r)",
-  "block.mirage.omni_beacon.tooltip.shift": "right click with torch"
+  "block.mirage.omni_beacon.tooltip.shift": "right click with torch",
+  "invalid_page_entry": "might need to check on what you wrote..."
 }

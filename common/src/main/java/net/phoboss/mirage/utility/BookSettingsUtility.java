@@ -27,7 +27,13 @@ public interface BookSettingsUtility {
                                             PlayerEntity player,
                                             MirageBlockEntity blockEntity){
 
-        NbtList pagesNbt = readPages(bookStack);
+        NbtList pagesNbt;
+        try {
+            pagesNbt = readPages(bookStack);
+        }catch(Exception e){
+            return ErrorResponse.onErrorActionResult(e,world,pos,player,"can't find pages...");
+        }
+
         if(pagesNbt.isEmpty()){
             SpecialEffects.playSound(world, pos, SoundEvents.ENTITY_LIGHTNING_BOLT_THUNDER);
             player.sendMessage(new TranslatableText("empty_book_error_prompt"),false);
@@ -110,7 +116,7 @@ public interface BookSettingsUtility {
                                 Integer.parseInt(vecArray[2]));
         }catch (Exception e){
             Mirage.LOGGER.error("Error while parsing Vec3i",e);
+            throw e;
         }
-        return null;
     }
 }

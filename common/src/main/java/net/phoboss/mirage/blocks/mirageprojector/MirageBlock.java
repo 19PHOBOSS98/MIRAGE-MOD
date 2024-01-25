@@ -15,7 +15,6 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 import net.phoboss.mirage.blocks.ModBlockEntities;
 import net.phoboss.mirage.utility.BookSettingsUtility;
@@ -23,7 +22,6 @@ import net.phoboss.mirage.utility.ErrorResponse;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
-import java.util.Objects;
 
 public class MirageBlock extends BlockWithEntity implements BlockEntityProvider, BookSettingsUtility {
     public MirageBlock(Settings settings) {
@@ -119,7 +117,7 @@ public class MirageBlock extends BlockWithEntity implements BlockEntityProvider,
 
             try {
                 if (!move.isEmpty()) {
-                    mirageBlockEntity.setMove(Objects.requireNonNullElse(BookSettingsUtility.parseBookVec3i(move), new Vec3i(0,0,0)));
+                    mirageBlockEntity.setMove(BookSettingsUtility.parseBookVec3i(move));
                 }
             } catch (Exception e) {
                 return ErrorResponse.onErrorActionResult(e, world, pos, player, "Invalid Entry: move:" + move);
