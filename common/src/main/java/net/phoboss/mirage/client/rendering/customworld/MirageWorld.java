@@ -198,12 +198,12 @@ public class MirageWorld extends World implements ServerWorldAccess {
             BlockPos relativePos = fakeBlockPos.subtract(projectorPos);
             matrices.translate(relativePos.getX(),relativePos.getY(),relativePos.getZ());
 
-
-
             if (fakeBlockEntity != null) {
-                renderMirageModelData(fakeBlockState, fakeBlockPos, this, true, getRandom(), fakeBlockEntity, matrices, vertexConsumers);
-                matrices.pop();
-                return;
+                if(shouldRenderModelData(fakeBlockEntity)) {
+                    renderMirageModelData(fakeBlockState, fakeBlockPos, this, true, getRandom(), fakeBlockEntity, matrices, vertexConsumers);
+                    matrices.pop();
+                    return;
+                }
             }
 
             if (fakeBlockState != null) {
@@ -215,6 +215,13 @@ public class MirageWorld extends World implements ServerWorldAccess {
         this.mirageBufferStorage.copyBufferBuilders(this.mirageBufferStorage.tempImmediate);
         this.mirageBufferStorage.uploadBufferBuildersToVertexBuffers();
     }
+
+    //WIP FramedBlocks compat
+    @ExpectPlatform
+    public static boolean shouldRenderModelData(BlockEntity blockEntity){
+        return false;
+    }
+    //WIP FramedBlocks compat
 
     //WIP Embeddium compat
     @ExpectPlatform

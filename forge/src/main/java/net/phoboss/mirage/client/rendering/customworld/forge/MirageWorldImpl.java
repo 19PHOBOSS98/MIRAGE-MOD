@@ -19,6 +19,7 @@ import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.model.data.IModelData;
 import net.phoboss.decobeacon.blocks.decobeacon.DecoBeaconBlock;
 import net.phoboss.mirage.client.rendering.customworld.MirageWorld;
+import xfacthd.framedblocks.api.block.FramedBlockEntity;
 
 import java.util.Random;
 
@@ -59,6 +60,9 @@ public class MirageWorldImpl extends MirageWorld {
         if(!shadersEnabled){
             mirageWorld.newlyRefreshedBuffers = true;
         }
+    }
+    public static boolean shouldRenderModelData(BlockEntity blockEntity){
+        return blockEntity instanceof FramedBlockEntity;
     }
     public static void renderMirageModelData(BlockState state, BlockPos referencePos, BlockRenderView world, boolean cull, Random random, BlockEntity blockEntity, MatrixStack matrices, VertexConsumerProvider vertexConsumerProvider){
         IModelData modelData = blockEntity.getModelData();

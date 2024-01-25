@@ -19,14 +19,8 @@ import java.util.SortedMap;
 public class MirageBufferStorage {
     public Object2ObjectLinkedOpenHashMap<RenderLayer, BufferBuilder> mirageEntityLayerBuffers;
     public Object2ObjectLinkedOpenHashMap<RenderLayer, VertexBuffer> mirageVertexBuffers = new Object2ObjectLinkedOpenHashMap<>();
-
-    private final static List<RenderLayer> renderLayerList = getRenderLayerList();
     public VertexConsumerProvider.Immediate tempImmediate;
-    public MirageBufferStorage() {
-        reset();
-    }
-    public static List<RenderLayer> getRenderLayerList(){
-        List<RenderLayer> layers = new ArrayList<>();
+    private final static List<RenderLayer> RENDER_LAYER_LIST = Util.make(new ArrayList<>(), (layers) -> {
         layers.add(TexturedRenderLayers.getEntitySolid());
         layers.add(TexturedRenderLayers.getEntityCutout());
         layers.add(TexturedRenderLayers.getBannerPatterns());
@@ -50,14 +44,15 @@ public class MirageBufferStorage {
 
         layers.addAll(RenderLayer.getBlockLayers());
         layers.add(RenderLayer.getEntitySolid(MinecraftClient.getInstance().getPaintingManager().getBackSprite().getAtlas().getId()));
+    });
 
-
-
-        return layers;
+    public MirageBufferStorage() {
+        reset();
     }
+
     public SortedMap<RenderLayer, BufferBuilder> setBufferBuilders(){
         return (SortedMap) Util.make(new Object2ObjectLinkedOpenHashMap(), (map) -> {
-            this.renderLayerList.forEach((renderLayer -> {
+            this.RENDER_LAYER_LIST.forEach((renderLayer -> {
                 assignBufferBuilder(map, renderLayer);
             }));
         });
@@ -69,7 +64,7 @@ public class MirageBufferStorage {
 
 
     public void copyBufferBuilders(VertexConsumerProvider.Immediate immediate){
-        for(RenderLayer renderLayer: renderLayerList){
+        for(RenderLayer renderLayer: RENDER_LAYER_LIST){
             this.mirageEntityLayerBuffers.put(renderLayer,(BufferBuilder) immediate.getBuffer(renderLayer));
         }
     }
