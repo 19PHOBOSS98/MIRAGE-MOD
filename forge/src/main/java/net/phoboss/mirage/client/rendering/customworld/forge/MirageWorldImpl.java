@@ -2,18 +2,17 @@ package net.phoboss.mirage.client.rendering.customworld.forge;
 
 import dev.architectury.platform.Platform;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import me.jellysquid.mods.sodium.client.render.texture.SpriteUtil;
 import net.irisshaders.iris.api.v0.IrisApi;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.model.BakedModel;
-import net.minecraft.client.render.model.BakedQuad;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockRenderView;
 import net.minecraft.world.World;
 import net.minecraftforge.client.ForgeHooksClient;
@@ -21,7 +20,6 @@ import net.minecraftforge.client.model.data.IModelData;
 import net.phoboss.decobeacon.blocks.decobeacon.DecoBeaconBlock;
 import net.phoboss.mirage.client.rendering.customworld.MirageWorld;
 
-import java.util.List;
 import java.util.Random;
 
 public class MirageWorldImpl extends MirageWorld {
@@ -30,23 +28,13 @@ public class MirageWorldImpl extends MirageWorld {
         super(world);
     }
 
-    public static void markAnimatedSprite(BlockState blockState,Random random){
+    public static void markAnimatedSprite(ObjectArrayList<Sprite> animatedSprites){
         if(!Platform.isModLoaded("embeddium")){
             return;
         }
-        if(blockState == null){
-            return;
-        }
-        BakedModel model = blockRenderManager.getModel(blockState);
-        for( Direction direction: Direction.values()){
-            List<BakedQuad> list = model.getQuads(blockState, direction, random);
-            list.forEach((quad)->{
-                Sprite sprite = quad.getSprite();
-                if(sprite != null){
-                    //SpriteUtil.markSpriteActive(sprite);
-                }
-            });
-        }
+        animatedSprites.forEach((sprite)->{
+            SpriteUtil.markSpriteActive(sprite);
+        });
     }
     public static boolean addToManualRenderList(long blockPosKey, StateNEntity stateNEntity, Long2ObjectOpenHashMap<StateNEntity> manualRenderBlocks){
         if(stateNEntity.blockState.getBlock() instanceof DecoBeaconBlock){

@@ -18,6 +18,9 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.BlockRenderManager;
 import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
+import net.minecraft.client.render.model.BakedModel;
+import net.minecraft.client.render.model.BakedQuad;
+import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -101,6 +104,7 @@ public class MirageWorld extends World implements ServerWorldAccess {
 
     protected World world;
     public ObjectArrayList<BlockTicker> mirageBlockEntityTickers;
+    public ObjectArrayList<Sprite> animatedSprites;
     protected Long2ObjectOpenHashMap<StateNEntity> mirageStateNEntities;
     protected Long2ObjectOpenHashMap<StateNEntity> manualBlocksList;
     protected Long2ObjectOpenHashMap<StateNEntity> vertexBufferBlocksList;
@@ -117,6 +121,7 @@ public class MirageWorld extends World implements ServerWorldAccess {
                 0);
         this.world = world;
         this.mirageBlockEntityTickers = new ObjectArrayList();
+        this.animatedSprites = new ObjectArrayList();
         this.mirageStateNEntities = new Long2ObjectOpenHashMap();
         this.bERBlocksList = new Long2ObjectOpenHashMap();
         this.vertexBufferBlocksList = new Long2ObjectOpenHashMap();
@@ -164,6 +169,8 @@ public class MirageWorld extends World implements ServerWorldAccess {
             renderMirageBlockEntity(block.blockEntity, tickDelta, matrices, vertexConsumers);
             matrices.pop();
         });
+
+        markAnimatedSprite(this.animatedSprites);
     }
 
     public void initVertexBuffers(BlockPos projectorPos) {
@@ -191,7 +198,7 @@ public class MirageWorld extends World implements ServerWorldAccess {
             BlockPos relativePos = fakeBlockPos.subtract(projectorPos);
             matrices.translate(relativePos.getX(),relativePos.getY(),relativePos.getZ());
 
-            markAnimatedSprite(fakeBlockState,this.getRandom());
+
 
             if (fakeBlockEntity != null) {
                 renderMirageModelData(fakeBlockState, fakeBlockPos, this, true, getRandom(), fakeBlockEntity, matrices, vertexConsumers);
@@ -209,10 +216,31 @@ public class MirageWorld extends World implements ServerWorldAccess {
         this.mirageBufferStorage.uploadBufferBuildersToVertexBuffers();
     }
 
+    //WIP Embeddium compat
     @ExpectPlatform
-    public static void markAnimatedSprite(BlockState blockState,Random random){
+    public static void markAnimatedSprite(ObjectArrayList<Sprite> animatedSprites){
         throw new AssertionError();
-    }//WIP Embeddium compat
+    }
+
+    public void addToAnimatedSprites(BlockState blockState,Random random){
+        if(blockState == null){
+            return;
+        }
+        BakedModel model = blockRenderManager.getModel(blockState);
+        List<BakedQuad> list = model.getQuads(blockState, null, random);//null faces returns the whole list of quads
+        list.forEach((quad)->{
+            Sprite sprite = quad.getSprite();
+            if(sprite != null){
+                if(sprite.getAnimation()!=null) {
+                    if(!this.animatedSprites.contains(sprite)) {
+                        this.animatedSprites.add(sprite);
+                    }
+                }
+            }
+        });
+    }
+    //WIP Embeddium compat
+
     @ExpectPlatform
     public static boolean isOnTranslucentRenderLayer(BlockState blockState){
         return RenderLayers.getEntityBlockLayer(blockState,true) == RenderLayer.getTranslucent();
@@ -247,6 +275,8 @@ public class MirageWorld extends World implements ServerWorldAccess {
             BlockState blockState = stateNEntity.blockState;
             BlockEntity blockEntity = stateNEntity.blockEntity;
 
+            addToAnimatedSprites(blockState,getRandom());
+
             if(blockEntity != null) {
                 if (blockEntityRenderDispatcher.get(blockEntity)!=null) {
                     this.bERBlocksList.put(blockPosKey,new BlockWEntity(blockState,blockEntity));
@@ -257,6 +287,7 @@ public class MirageWorld extends World implements ServerWorldAccess {
                     }
                 }
                 this.vertexBufferBlocksList.put(blockPosKey,stateNEntity);
+
                 return;
             }
 
