@@ -1,6 +1,7 @@
 package net.phoboss.mirage.client.rendering.customworld;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.VertexBuffer;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.RenderLayer;
@@ -36,6 +37,7 @@ public class MirageBufferStorage {
         layers.add(TexturedRenderLayers.getShulkerBoxes());
         layers.add(TexturedRenderLayers.getSign());
         layers.add(TexturedRenderLayers.getChest());
+
         layers.add(RenderLayer.getTranslucentNoCrumbling());
         layers.add(RenderLayer.getArmorGlint());
         layers.add(RenderLayer.getArmorEntityGlint());
@@ -47,6 +49,10 @@ public class MirageBufferStorage {
         layers.add(RenderLayer.getWaterMask());
 
         layers.addAll(RenderLayer.getBlockLayers());
+        layers.add(RenderLayer.getEntitySolid(MinecraftClient.getInstance().getPaintingManager().getBackSprite().getAtlas().getId()));
+
+
+
         return layers;
     }
     public SortedMap<RenderLayer, BufferBuilder> setBufferBuilders(){
@@ -102,9 +108,9 @@ public class MirageBufferStorage {
     }
     public void reset() {
 
-        this.mirageEntityLayerBuffers = new Object2ObjectLinkedOpenHashMap();
+        this.mirageEntityLayerBuffers = new Object2ObjectLinkedOpenHashMap<>();
 
-        this.mirageVertexBuffers = new Object2ObjectLinkedOpenHashMap();
+        this.mirageVertexBuffers = new Object2ObjectLinkedOpenHashMap<>();
 
         this.tempImmediate = VertexConsumerProvider.immediate(setBufferBuilders(), new BufferBuilder(256));
     }
