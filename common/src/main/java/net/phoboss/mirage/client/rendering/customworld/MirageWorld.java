@@ -120,12 +120,12 @@ public class MirageWorld extends World implements ServerWorldAccess {
                 world.isDebugWorld(),
                 0);
         this.world = world;
-        this.mirageBlockEntityTickers = new ObjectArrayList();
-        this.animatedSprites = new ObjectArrayList();
-        this.mirageStateNEntities = new Long2ObjectOpenHashMap();
-        this.bERBlocksList = new Long2ObjectOpenHashMap();
-        this.vertexBufferBlocksList = new Long2ObjectOpenHashMap();
-        this.manualBlocksList = new Long2ObjectOpenHashMap();
+        this.mirageBlockEntityTickers = new ObjectArrayList<>();
+        this.animatedSprites = new ObjectArrayList<>();
+        this.mirageStateNEntities = new Long2ObjectOpenHashMap<>();
+        this.bERBlocksList = new Long2ObjectOpenHashMap<>();
+        this.vertexBufferBlocksList = new Long2ObjectOpenHashMap<>();
+        this.manualBlocksList = new Long2ObjectOpenHashMap<>();
 
         setChunkManager(new MirageChunkManager(this));
 
@@ -222,22 +222,32 @@ public class MirageWorld extends World implements ServerWorldAccess {
         throw new AssertionError();
     }
 
+    public void addToAnimatedSprites(BakedQuad quad){
+        Sprite sprite = quad.getSprite();
+        if(sprite != null){
+            if(sprite.getAnimation()!=null) {
+                if(!this.animatedSprites.contains(sprite)) {
+                    this.animatedSprites.add(sprite);
+                }
+            }
+        }
+    }
     public void addToAnimatedSprites(BlockState blockState,Random random){
         if(blockState == null){
             return;
         }
         BakedModel model = blockRenderManager.getModel(blockState);
-        List<BakedQuad> list = model.getQuads(blockState, null, random);//null faces returns the whole list of quads
-        list.forEach((quad)->{
-            Sprite sprite = quad.getSprite();
-            if(sprite != null){
-                if(sprite.getAnimation()!=null) {
-                    if(!this.animatedSprites.contains(sprite)) {
-                        this.animatedSprites.add(sprite);
-                    }
-                }
-            }
+        List<BakedQuad> quads = model.getQuads(blockState, null, random);//null faces returns the whole list of quads
+        quads.forEach((quad)->{
+            addToAnimatedSprites(quad);
         });
+        for(Direction direction:Direction.values()){
+            List<BakedQuad> faceQuads = model.getQuads(blockState, direction, random);//some blocks (i.e. Smoker) only have quads in faceQuads
+            faceQuads.forEach((quad)->{
+                addToAnimatedSprites(quad);
+            });
+        }
+
     }
     //WIP Embeddium compat
 
