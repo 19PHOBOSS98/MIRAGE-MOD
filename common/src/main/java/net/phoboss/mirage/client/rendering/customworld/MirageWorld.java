@@ -18,20 +18,28 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.BlockRenderManager;
 import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
+import net.minecraft.client.render.entity.EntityRenderer;
+import net.minecraft.client.render.entity.LivingEntityRenderer;
+import net.minecraft.client.render.entity.model.EntityModel;
 import net.minecraft.client.render.model.BakedModel;
 import net.minecraft.client.render.model.BakedQuad;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.item.ArmorItem;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.map.MapState;
 import net.minecraft.recipe.RecipeManager;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
@@ -57,6 +65,12 @@ public class MirageWorld extends World implements ServerWorldAccess {
     public static BlockRenderManager blockRenderManager = mc.getBlockRenderManager();
     public static BlockEntityRenderDispatcher blockEntityRenderDispatcher = mc.getBlockEntityRenderDispatcher();
     public static EntityRenderDispatcher entityRenderDispatcher = mc.getEntityRenderDispatcher();
+    /*public static TextureManager textureManager = mc.getTextureManager();
+    public static ItemRenderer itemRenderer = mc.getItemRenderer();
+    public static ResourceManager resourceManager = mc.getResourceManager();
+    public static EntityModelLoader entityModelLoader = mc.getEntityModelLoader();
+    public static TextRenderer textRenderer = mc.inGameHud.getTextRenderer();*/
+
     protected ChunkManager chunkManager;
 
 
@@ -174,9 +188,9 @@ public class MirageWorld extends World implements ServerWorldAccess {
     }
 
     public void initVertexBuffers(BlockPos projectorPos) {
-        this.mirageBufferStorage.reset();
         MatrixStack matrices = new MatrixStack();
-        VertexConsumerProvider.Immediate vertexConsumers = this.mirageBufferStorage.tempImmediate;
+
+        VertexConsumerProvider.Immediate vertexConsumers = this.mirageBufferStorage.getMirageImmediate();
 
         this.vertexBufferBlocksList.forEach((fakeBlockPosKey, fakeStateNEntity)->{
             BlockPos fakeBlockPos = BlockPos.fromLong(fakeBlockPosKey);
@@ -211,9 +225,7 @@ public class MirageWorld extends World implements ServerWorldAccess {
             }
             matrices.pop();
         });
-
-        this.mirageBufferStorage.copyBufferBuilders(this.mirageBufferStorage.tempImmediate);
-        this.mirageBufferStorage.uploadBufferBuildersToVertexBuffers();
+        this.mirageBufferStorage.uploadBufferBuildersToVertexBuffers(vertexConsumers);
     }
 
     //WIP FramedBlocks compat
@@ -288,10 +300,11 @@ public class MirageWorld extends World implements ServerWorldAccess {
         }
     }
     public void initBlockRenderLists() {
+        this.mirageBufferStorage.reset();
         this.mirageStateNEntities.forEach((blockPosKey,stateNEntity)->{
             BlockState blockState = stateNEntity.blockState;
             BlockEntity blockEntity = stateNEntity.blockEntity;
-
+            Entity entity = stateNEntity.entity;
             addToAnimatedSprites(blockState,getRandom());
 
             if(blockEntity != null) {
@@ -316,9 +329,42 @@ public class MirageWorld extends World implements ServerWorldAccess {
             }
 
             this.vertexBufferBlocksList.put(blockPosKey,stateNEntity);
+
+            //collect entity renderLayers
+            if(entity == null){
+                return;
+            }
+
+            EntityRenderer entityRenderer = entityRenderDispatcher.getRenderer(entity);
+            if(entityRenderer instanceof LivingEntityRenderer livingEntityRenderer){
+                EntityModel entityModel = livingEntityRenderer.getModel();
+                Identifier resourcelocation = entityRenderer.getTexture(entity);
+                RenderLayer translucentEntityLayer = RenderLayer.getItemEntityTranslucentCull(resourcelocation);
+                RenderLayer modelEntityLayer = entityModel.getLayer(resourcelocation);
+
+                this.mirageBufferStorage.addRenderLayer(translucentEntityLayer);
+                this.mirageBufferStorage.addRenderLayer(modelEntityLayer);
+
+                if(entity instanceof LivingEntity livingEntity){
+                    for(EquipmentSlot equipmentSlot:EquipmentSlot.values()){
+                        ItemStack itemstack = livingEntity.getEquippedStack(equipmentSlot);
+                        if (itemstack.getItem() instanceof ArmorItem armorItem) {
+                            RenderLayer.getArmorCutoutNoCull(getArmorTexture(armorItem, equipmentSlot == EquipmentSlot.LEGS, "overlay"));
+                            RenderLayer.getArmorCutoutNoCull(getArmorTexture(armorItem, equipmentSlot == EquipmentSlot.LEGS, (String)null));
+                        }
+                    }
+
+                }
+
+
+            }
         });
     }
-
+    public Identifier getArmorTexture(ArmorItem item, boolean legs, @Nullable String overlay) {
+        String var10000 = item.getMaterial().getName();
+        String string = "textures/models/armor/" + var10000 + "_layer_" + (legs ? 2 : 1) + (overlay == null ? "" : "_" + overlay) + ".png";
+        return new Identifier(string);
+    }
 
     public static void renderMirageBlockEntity(BlockEntity blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers){
         blockEntityRenderDispatcher.render(blockEntity,tickDelta,matrices,vertexConsumers);
@@ -326,7 +372,6 @@ public class MirageWorld extends World implements ServerWorldAccess {
     public static void renderMirageEntity(Entity entity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers){
         entityRenderDispatcher.render(entity, 0, 0, 0, entity.getYaw(), tickDelta, matrices, vertexConsumers, entityRenderDispatcher.getLight(entity, tickDelta));
     }
-
     public static void renderMirageBlock(BlockState state, BlockPos referencePos, BlockRenderView world, MatrixStack matrices, VertexConsumerProvider vertexConsumerProvider, boolean cull, Random random){
         RenderLayer rl = RenderLayers.getEntityBlockLayer(state,true);
         blockRenderManager.renderBlock(state,referencePos,world,matrices,

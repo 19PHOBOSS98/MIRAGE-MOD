@@ -8,9 +8,6 @@ import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.TexturedRenderLayers;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.util.Util;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkSectionPos;
-import net.minecraft.util.math.Vec3d;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,8 +16,14 @@ import java.util.SortedMap;
 public class MirageBufferStorage {
     public Object2ObjectLinkedOpenHashMap<RenderLayer, BufferBuilder> mirageEntityLayerBuffers;
     public Object2ObjectLinkedOpenHashMap<RenderLayer, VertexBuffer> mirageVertexBuffers = new Object2ObjectLinkedOpenHashMap<>();
-    public VertexConsumerProvider.Immediate tempImmediate;
-    private final static List<RenderLayer> RENDER_LAYER_LIST = Util.make(new ArrayList<>(), (layers) -> {
+    public List<RenderLayer> renderLayerList;
+
+    public MirageBufferStorage() {
+        reset();
+    }
+
+    public List<RenderLayer> getDefaultRenderLayers(){
+        List<RenderLayer> layers = new ArrayList<>();
         layers.add(TexturedRenderLayers.getEntitySolid());
         layers.add(TexturedRenderLayers.getEntityCutout());
         layers.add(TexturedRenderLayers.getBannerPatterns());
@@ -33,8 +36,8 @@ public class MirageBufferStorage {
         layers.add(TexturedRenderLayers.getChest());
 
         layers.add(RenderLayer.getTranslucentNoCrumbling());
-        layers.add(RenderLayer.getArmorGlint());
-        layers.add(RenderLayer.getArmorEntityGlint());
+
+
         layers.add(RenderLayer.getGlint());
         layers.add(RenderLayer.getDirectGlint());
         layers.add(RenderLayer.getGlintTranslucent());
@@ -44,19 +47,14 @@ public class MirageBufferStorage {
 
         layers.addAll(RenderLayer.getBlockLayers());
         layers.add(RenderLayer.getEntitySolid(MinecraftClient.getInstance().getPaintingManager().getBackSprite().getAtlas().getId()));
-    });
 
-    public MirageBufferStorage() {
-        reset();
+
+        layers.add(RenderLayer.getArmorGlint());
+        layers.add(RenderLayer.getArmorEntityGlint());
+        return layers;
     }
 
-    public SortedMap<RenderLayer, BufferBuilder> setBufferBuilders(){
-        return (SortedMap) Util.make(new Object2ObjectLinkedOpenHashMap(), (map) -> {
-            this.RENDER_LAYER_LIST.forEach((renderLayer -> {
-                assignBufferBuilder(map, renderLayer);
-            }));
-        });
-    }
+
     private static void assignBufferBuilder(Object2ObjectLinkedOpenHashMap<RenderLayer, BufferBuilder> builderStorage, RenderLayer layer) {
         builderStorage.put(layer, new BufferBuilder(layer.getExpectedBufferSize()));
     }
@@ -64,12 +62,12 @@ public class MirageBufferStorage {
 
 
     public void copyBufferBuilders(VertexConsumerProvider.Immediate immediate){
-        for(RenderLayer renderLayer: RENDER_LAYER_LIST){
+        for(RenderLayer renderLayer: renderLayerList){
             this.mirageEntityLayerBuffers.put(renderLayer,(BufferBuilder) immediate.getBuffer(renderLayer));
         }
     }
 
-    public void sortTranslucentBlockBufferLayer(Vec3d playerCamera, BlockPos projectorPos){
+    /*public void sortTranslucentBlockBufferLayer(Vec3d playerCamera, BlockPos projectorPos){
         RenderLayer translucentLayer = RenderLayer.getTranslucent();
         BufferBuilder bufferBuilder = this.mirageEntityLayerBuffers.get(translucentLayer);
         if(!bufferBuilder.isBuilding()){
@@ -81,13 +79,8 @@ public class MirageBufferStorage {
                                (float)playerCamera.y - (float) projectorChunkOrigin.getY(),
                                (float)playerCamera.z - (float) projectorChunkOrigin.getZ());
 
-    }
-    public void uploadBufferBuilderToVertexBuffer(RenderLayer renderLayer) {
-        if(!this.mirageVertexBuffers.containsKey(renderLayer)){
-            this.mirageVertexBuffers.put(renderLayer, new VertexBuffer());
-        }
-        this.mirageVertexBuffers.get(renderLayer).upload(this.mirageEntityLayerBuffers.get(renderLayer));
-    }
+    }*/
+
     public void uploadBufferBuildersToVertexBuffers() {
         this.mirageEntityLayerBuffers.forEach((renderLayer, bufferBuilder)->{
             if(bufferBuilder.isBuilding()){
@@ -101,13 +94,37 @@ public class MirageBufferStorage {
             }
         });
     }
-    public void reset() {
-
-        this.mirageEntityLayerBuffers = new Object2ObjectLinkedOpenHashMap<>();
-
-        this.mirageVertexBuffers = new Object2ObjectLinkedOpenHashMap<>();
-
-        this.tempImmediate = VertexConsumerProvider.immediate(setBufferBuilders(), new BufferBuilder(256));
+    public void uploadBufferBuildersToVertexBuffers(VertexConsumerProvider.Immediate immediate) {
+        this.renderLayerList.forEach((renderLayer) -> {
+            BufferBuilder bufferBuilder = (BufferBuilder) immediate.getBuffer(renderLayer);
+            if(bufferBuilder.isBuilding()){
+                bufferBuilder.end();
+                if(!this.mirageVertexBuffers.containsKey(renderLayer)){
+                    this.mirageVertexBuffers.put(renderLayer, new VertexBuffer());
+                }
+                this.mirageVertexBuffers.get(renderLayer).upload(bufferBuilder);
+            }
+        });
     }
 
+    public void reset() {
+        this.mirageEntityLayerBuffers = new Object2ObjectLinkedOpenHashMap<>();
+        this.mirageVertexBuffers = new Object2ObjectLinkedOpenHashMap<>();
+        this.renderLayerList = getDefaultRenderLayers();
+    }
+    public void addRenderLayer(RenderLayer renderLayer){
+        if(!renderLayerList.contains(renderLayer)){
+            renderLayerList.add(renderLayer);
+        }
+    }
+    public SortedMap<RenderLayer, BufferBuilder> setBufferBuilders(){
+        return (SortedMap) Util.make(new Object2ObjectLinkedOpenHashMap(), (map) -> {
+            this.renderLayerList.forEach((renderLayer -> {
+                assignBufferBuilder(map, renderLayer);
+            }));
+        });
+    }
+    public VertexConsumerProvider.Immediate getMirageImmediate(){
+        return VertexConsumerProvider.immediate(setBufferBuilders(), new BufferBuilder(256));
+    }
 }
