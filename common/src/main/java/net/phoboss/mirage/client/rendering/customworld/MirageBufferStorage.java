@@ -6,22 +6,24 @@ import net.minecraft.client.gl.VertexBuffer;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.TexturedRenderLayers;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.util.Util;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.SortedMap;
 
 public class MirageBufferStorage {
-    public Object2ObjectLinkedOpenHashMap<RenderLayer, BufferBuilder> mirageEntityLayerBuffers;
     public Object2ObjectLinkedOpenHashMap<RenderLayer, VertexBuffer> mirageVertexBuffers = new Object2ObjectLinkedOpenHashMap<>();
-    public List<RenderLayer> renderLayerList;
 
     public MirageBufferStorage() {
         reset();
     }
 
+    public Object2ObjectLinkedOpenHashMap<RenderLayer, BufferBuilder> getDefaultBuffers(){
+        Object2ObjectLinkedOpenHashMap<RenderLayer, BufferBuilder> map = new Object2ObjectLinkedOpenHashMap<>();
+        getDefaultRenderLayers().forEach((renderLayer)->{
+            map.put(renderLayer,new BufferBuilder(renderLayer.getExpectedBufferSize()));
+        });
+        return map;
+    }
     public List<RenderLayer> getDefaultRenderLayers(){
         List<RenderLayer> layers = new ArrayList<>();
         layers.add(TexturedRenderLayers.getEntitySolid());
@@ -55,48 +57,8 @@ public class MirageBufferStorage {
     }
 
 
-    private static void assignBufferBuilder(Object2ObjectLinkedOpenHashMap<RenderLayer, BufferBuilder> builderStorage, RenderLayer layer) {
-        builderStorage.put(layer, new BufferBuilder(layer.getExpectedBufferSize()));
-    }
-
-
-
-    public void copyBufferBuilders(VertexConsumerProvider.Immediate immediate){
-        for(RenderLayer renderLayer: renderLayerList){
-            this.mirageEntityLayerBuffers.put(renderLayer,(BufferBuilder) immediate.getBuffer(renderLayer));
-        }
-    }
-
-    /*public void sortTranslucentBlockBufferLayer(Vec3d playerCamera, BlockPos projectorPos){
-        RenderLayer translucentLayer = RenderLayer.getTranslucent();
-        BufferBuilder bufferBuilder = this.mirageEntityLayerBuffers.get(translucentLayer);
-        if(!bufferBuilder.isBuilding()){
-            bufferBuilder.begin(translucentLayer.getDrawMode(),translucentLayer.getVertexFormat());
-        }
-        ChunkSectionPos projectorChunkSection =  ChunkSectionPos.from(projectorPos);
-        BlockPos projectorChunkOrigin = projectorChunkSection.getMinPos();
-        bufferBuilder.sortFrom((float)playerCamera.x - (float) projectorChunkOrigin.getX(),
-                               (float)playerCamera.y - (float) projectorChunkOrigin.getY(),
-                               (float)playerCamera.z - (float) projectorChunkOrigin.getZ());
-
-    }*/
-
-    public void uploadBufferBuildersToVertexBuffers() {
-        this.mirageEntityLayerBuffers.forEach((renderLayer, bufferBuilder)->{
-            if(bufferBuilder.isBuilding()){
-                bufferBuilder.end();
-                if(!this.mirageVertexBuffers.containsKey(renderLayer)){
-                    this.mirageVertexBuffers.put(renderLayer, new VertexBuffer());
-                }
-
-                this.mirageVertexBuffers.get(renderLayer).upload(bufferBuilder);
-
-            }
-        });
-    }
-    public void uploadBufferBuildersToVertexBuffers(VertexConsumerProvider.Immediate immediate) {
-        this.renderLayerList.forEach((renderLayer) -> {
-            BufferBuilder bufferBuilder = (BufferBuilder) immediate.getBuffer(renderLayer);
+    public void uploadBufferBuildersToVertexBuffers(MirageImmediate mirageImmediate) {
+        mirageImmediate.getLayerBuffers().forEach((renderLayer,bufferBuilder)->{
             if(bufferBuilder.isBuilding()){
                 bufferBuilder.end();
                 if(!this.mirageVertexBuffers.containsKey(renderLayer)){
@@ -105,26 +67,14 @@ public class MirageBufferStorage {
                 this.mirageVertexBuffers.get(renderLayer).upload(bufferBuilder);
             }
         });
+
     }
 
     public void reset() {
-        this.mirageEntityLayerBuffers = new Object2ObjectLinkedOpenHashMap<>();
         this.mirageVertexBuffers = new Object2ObjectLinkedOpenHashMap<>();
-        this.renderLayerList = getDefaultRenderLayers();
     }
-    public void addRenderLayer(RenderLayer renderLayer){
-        if(!renderLayerList.contains(renderLayer)){
-            renderLayerList.add(renderLayer);
-        }
-    }
-    public SortedMap<RenderLayer, BufferBuilder> setBufferBuilders(){
-        return (SortedMap) Util.make(new Object2ObjectLinkedOpenHashMap(), (map) -> {
-            this.renderLayerList.forEach((renderLayer -> {
-                assignBufferBuilder(map, renderLayer);
-            }));
-        });
-    }
-    public VertexConsumerProvider.Immediate getMirageImmediate(){
-        return VertexConsumerProvider.immediate(setBufferBuilders(), new BufferBuilder(256));
+
+    public MirageImmediate getMirageImmediate(){
+        return new MirageImmediate(getDefaultBuffers());
     }
 }

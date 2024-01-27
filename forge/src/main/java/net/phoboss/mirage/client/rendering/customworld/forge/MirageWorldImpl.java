@@ -37,7 +37,7 @@ public class MirageWorldImpl extends MirageWorld {
             SpriteUtil.markSpriteActive(sprite);
         });
     }
-    public static boolean addToManualRenderList(long blockPosKey, StateNEntity stateNEntity, Long2ObjectOpenHashMap<StateNEntity> manualRenderBlocks){
+    public static boolean addToManualBlockRenderList(long blockPosKey, StateNEntity stateNEntity, Long2ObjectOpenHashMap<StateNEntity> manualRenderBlocks){
         if(stateNEntity.blockState.getBlock() instanceof DecoBeaconBlock){
             manualRenderBlocks.put(blockPosKey, stateNEntity);
             return true;
@@ -48,10 +48,10 @@ public class MirageWorldImpl extends MirageWorld {
         return RenderLayers.canRenderInLayer(blockState,TRANSLUCENT_RENDER_LAYER);
     }
     public static void refreshVertexBuffersIfNeeded(BlockPos projectorPos, MirageWorld mirageWorld){
-        if(!Platform.isModLoaded("oculus")){
-            return;
+        Boolean shadersEnabled = false;
+        if(Platform.isModLoaded("oculus")){
+            shadersEnabled = IrisApi.getInstance().getConfig().areShadersEnabled();
         }
-        Boolean shadersEnabled = IrisApi.getInstance().getConfig().areShadersEnabled();
         if(shadersEnabled && mirageWorld.newlyRefreshedBuffers || mirageWorld.overideRefreshBuffer){
             mirageWorld.initVertexBuffers(projectorPos);
             mirageWorld.newlyRefreshedBuffers = false;

@@ -3,6 +3,7 @@ package net.phoboss.mirage.client.rendering.customworld;
 import com.google.common.collect.Lists;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.decoration.AbstractDecorationEntity;
+import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtDouble;
 import net.minecraft.nbt.NbtList;
@@ -62,6 +63,7 @@ public class MirageStructure extends Structure {
         return result;
     }
 
+
     public void spawnEntities(World world, BlockPos pos, BlockMirror blockMirror, BlockRotation blockRotation, BlockPos pivot, @Nullable BlockBox area, boolean initializeMobs) {
         this.mirageEntities.forEach((structureEntityInfo)->{
             BlockPos blockPosOff = transformAround(structureEntityInfo.blockPos, blockMirror, blockRotation, pivot).add(pos);
@@ -78,34 +80,80 @@ public class MirageStructure extends Structure {
             nbtList.add(NbtDouble.of(entityPosRotated.z));
             nbtCompound.put("Pos", nbtList);
             nbtCompound.remove("UUID");
+
+            /*Entity entity = EntityType.loadEntityWithPassengers(nbtCompound, world, (entityx) -> {
+                entityx.refreshPositionAndAngles(entityPosRotated.x, entityPosRotated.y, entityPosRotated.z, entityx.getYaw(), entityx.getPitch());
+                return entityx;
+            });
+            if(entity == null){
+                return;
+            }
+            float f = entity.applyMirror(blockMirror);
+            f += entity.getYaw() - entity.applyRotation(blockRotation);
+
+            BlockPos entityPos = blockPosOff;
+            if(entity instanceof AbstractDecorationEntity painting){
+                if(painting.getWidthPixels()>16){
+                    if(blockMirror != BlockMirror.NONE){
+                        BlockPos lookVector = new BlockPos(Direction.fromRotation(f).getVector());
+                        BlockPos lookRight = lookVector.rotate(BlockRotation.CLOCKWISE_90);
+                        entityPos = entityPos.add(lookRight);
+                    }
+                }
+            }
+
+            entity.refreshPositionAndAngles(entityPos, f, entity.getPitch());
+
+            entity.setYaw(f);
+            entity.prevYaw = f;
+            entity.setPitch(entity.getPitch());
+            entity.prevPitch = entity.getPitch();
+
+            entity.resetPosition();
+            if (world instanceof MirageWorld mw) {
+                mw.spawnMirageEntityAndPassengers(entity);
+            }*/
             EntityType.getEntityFromNbt(nbtCompound,world).ifPresent((entity) -> {
-                float f = entity.applyMirror(blockMirror);
-                f += entity.getYaw() - entity.applyRotation(blockRotation);
+                float rotatedYaw = 0;
 
                 BlockPos entityPos = blockPosOff;
                 if(entity instanceof AbstractDecorationEntity painting){
+                    rotatedYaw = entity.applyMirror(blockMirror);
+                    rotatedYaw += entity.getYaw() - entity.applyRotation(blockRotation);
+
                     if(painting.getWidthPixels()>16){
                         if(blockMirror != BlockMirror.NONE){
-                            BlockPos lookVector = new BlockPos(Direction.fromRotation(f).getVector());
+                            BlockPos lookVector = new BlockPos(Direction.fromRotation(rotatedYaw).getVector());
                             BlockPos lookRight = lookVector.rotate(BlockRotation.CLOCKWISE_90);
                             entityPos = entityPos.add(lookRight);
                         }
                     }
+
+                }else{
+                    rotatedYaw = entity.applyRotation(blockRotation);
+                    rotatedYaw += entity.applyMirror(blockMirror) - entity.getYaw();
                 }
-
-                entity.refreshPositionAndAngles(entityPos, f, entity.getPitch());
-
-                entity.setYaw(f);
-                entity.prevYaw = f;
+                entity.refreshPositionAndAngles(entityPos, rotatedYaw, entity.getPitch());
+                entity.setYaw(rotatedYaw);
+                entity.prevYaw = rotatedYaw;
                 entity.setPitch(entity.getPitch());
                 entity.prevPitch = entity.getPitch();
+                entity.setHeadYaw(rotatedYaw);
+                entity.setBodyYaw(rotatedYaw);
+                if(entity instanceof MobEntity mobEntity){
+                    mobEntity.prevHeadYaw =  mobEntity.headYaw;
+                    mobEntity.prevBodyYaw =  mobEntity.bodyYaw;
+                }
 
                 entity.resetPosition();
+
 
                 if (world instanceof MirageWorld mw) {
                     mw.spawnMirageEntityAndPassengers(entity);
                 }
             });
+
+
         });
 
     }
