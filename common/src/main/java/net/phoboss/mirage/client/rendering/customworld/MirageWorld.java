@@ -168,12 +168,9 @@ public class MirageWorld extends World implements ServerWorldAccess {
             Entity fakeEntity = stateNEntity.entity;
             matrices.push();
             Vec3d entityPos = fakeEntity.getPos().subtract(new Vec3d(projectorPos.getX(), projectorPos.getY(), projectorPos.getZ()));
-            //matrices.multiply(new Quaternion(new Vec3f(0,1,0),fakeEntity.getYaw(),true));
-            //matrices.push();
             matrices.translate(entityPos.getX(), entityPos.getY(), entityPos.getZ());
             renderMirageEntity(fakeEntity, 0, matrices, vertexConsumers);
             matrices.pop();
-            //matrices.pop();
         });
 
         this.manualBlocksList.forEach((key, block)->{//need to render multi-model-layered translucent blocks (i.e. slime, honey, DecoBeacons etc) manually :(
@@ -200,7 +197,6 @@ public class MirageWorld extends World implements ServerWorldAccess {
     public void initVertexBuffers(BlockPos projectorPos) {
         this.mirageBufferStorage.reset();
         MatrixStack matrices = new MatrixStack();
-        //VertexConsumerProvider.Immediate vertexConsumers = this.mirageBufferStorage.getMirageImmediate();
         MirageImmediate vertexConsumers = this.mirageBufferStorage.getMirageImmediate();
 
         this.vertexBufferBlocksList.forEach((fakeBlockPosKey, fakeStateNEntity)->{
@@ -209,9 +205,6 @@ public class MirageWorld extends World implements ServerWorldAccess {
             BlockEntity fakeBlockEntity = fakeStateNEntity.blockEntity;
             Entity fakeEntity = fakeStateNEntity.entity;
 
-
-
-
             if (fakeEntity != null) {
                 matrices.push();
                 Vec3d entityPos = fakeEntity.getPos().subtract(new Vec3d(projectorPos.getX(),projectorPos.getY(),projectorPos.getZ()));
@@ -219,7 +212,6 @@ public class MirageWorld extends World implements ServerWorldAccess {
                 renderMirageEntity(fakeEntity, 0, matrices, vertexConsumers);
                 matrices.pop();
             }
-
 
             matrices.push();
             BlockPos relativePos = fakeBlockPos.subtract(projectorPos);
@@ -384,71 +376,6 @@ public class MirageWorld extends World implements ServerWorldAccess {
             }
 
             this.vertexBufferBlocksList.put(blockPosKey,stateNEntity);
-
-            //collect entity renderLayers
-
-            /*
-            if(entity == null){
-                return;
-            }
-
-            EntityRenderer entityRenderer = entityRenderDispatcher.getRenderer(entity);
-            if(entityRenderer instanceof LivingEntityRenderer livingEntityRenderer){
-                EntityModel entityModel = livingEntityRenderer.getModel();
-                Identifier resourcelocation = entityRenderer.getTexture(entity);
-                RenderLayer translucentEntityLayer = RenderLayer.getItemEntityTranslucentCull(resourcelocation);
-                RenderLayer modelEntityLayer = entityModel.getLayer(resourcelocation);
-
-                this.mirageBufferStorage.addRenderLayer(translucentEntityLayer);
-                this.mirageBufferStorage.addRenderLayer(modelEntityLayer);
-
-                if(entity instanceof LivingEntity livingEntity){
-                    for(EquipmentSlot equipmentSlot:EquipmentSlot.values()){
-                        ItemStack itemstack = livingEntity.getEquippedStack(equipmentSlot);
-                        Item item = itemstack.getItem();
-                        if (item instanceof ArmorItem armorItem) {
-                            this.mirageBufferStorage.addRenderLayer(
-                                    RenderLayer.getArmorCutoutNoCull(getArmorTexture(armorItem, equipmentSlot == EquipmentSlot.LEGS, "overlay")));
-                            this.mirageBufferStorage.addRenderLayer(
-                                    RenderLayer.getArmorCutoutNoCull(getArmorTexture(armorItem, equipmentSlot == EquipmentSlot.LEGS, (String)null)));
-                            continue;
-                        }
-                        boolean flag1;
-                        if (item instanceof BlockItem blockItem) {
-                            Block block = blockItem.getBlock();
-                            flag1 = !(block instanceof TransparentBlock) && !(block instanceof StainedGlassPaneBlock);
-                        } else {
-                            flag1 = true;
-                        }
-                        this.mirageBufferStorage.addRenderLayer(RenderLayers.getItemLayer(itemstack, flag1));
-
-                        if (item instanceof BlockItem) {
-                            Block block = ((BlockItem) item).getBlock();
-                            if (block instanceof AbstractSkullBlock) {
-                                GameProfile gameProfile = null;
-                                if (itemstack.hasNbt()) {
-                                    NbtCompound nbtCompound = itemstack.getNbt();
-                                    if (nbtCompound.contains("SkullOwner", 10)) {
-                                        gameProfile = NbtHelper.toGameProfile(nbtCompound.getCompound("SkullOwner"));
-                                    } else if (nbtCompound.contains("SkullOwner", 8) && !StringUtils.isBlank(nbtCompound.getString("SkullOwner"))) {
-                                        gameProfile = new GameProfile((UUID)null, nbtCompound.getString("SkullOwner"));
-                                        nbtCompound.remove("SkullOwner");
-                                        SkullBlockEntity.loadProperties(gameProfile, (gameProfilex) -> {
-                                            nbtCompound.put("SkullOwner", NbtHelper.writeGameProfile(new NbtCompound(), gameProfilex));
-                                        });
-                                    }
-                                }
-                                SkullBlock.SkullType skullType = ((AbstractSkullBlock)block).getSkullType();
-                                this.mirageBufferStorage.addRenderLayer(SkullBlockEntityRenderer.getRenderLayer(skullType, gameProfile));
-                            }
-                        }
-                    }
-
-                }
-
-
-            }
-            */
         });
     }
 

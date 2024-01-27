@@ -81,6 +81,7 @@ public class MirageStructure extends Structure {
             nbtCompound.put("Pos", nbtList);
             nbtCompound.remove("UUID");
 
+            //needs improvement
             /*Entity entity = EntityType.loadEntityWithPassengers(nbtCompound, world, (entityx) -> {
                 entityx.refreshPositionAndAngles(entityPosRotated.x, entityPosRotated.y, entityPosRotated.z, entityx.getYaw(), entityx.getPitch());
                 return entityx;
@@ -113,6 +114,8 @@ public class MirageStructure extends Structure {
             if (world instanceof MirageWorld mw) {
                 mw.spawnMirageEntityAndPassengers(entity);
             }*/
+            //needs improvement
+
             EntityType.getEntityFromNbt(nbtCompound,world).ifPresent((entity) -> {
                 float rotatedYaw = 0;
 
