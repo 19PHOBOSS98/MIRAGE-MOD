@@ -3,7 +3,6 @@ package net.phoboss.mirage.client.rendering.customworld;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.VertexBuffer;
-import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.TexturedRenderLayers;
 
@@ -17,10 +16,10 @@ public class MirageBufferStorage {
         reset();
     }
 
-    public Object2ObjectLinkedOpenHashMap<RenderLayer, BufferBuilder> getDefaultBuffers(){
-        Object2ObjectLinkedOpenHashMap<RenderLayer, BufferBuilder> map = new Object2ObjectLinkedOpenHashMap<>();
+    public Object2ObjectLinkedOpenHashMap<RenderLayer, MirageBufferBuilder> getDefaultBuffers(){
+        Object2ObjectLinkedOpenHashMap<RenderLayer, MirageBufferBuilder> map = new Object2ObjectLinkedOpenHashMap<>();
         getDefaultRenderLayers().forEach((renderLayer)->{
-            map.put(renderLayer,new BufferBuilder(renderLayer.getExpectedBufferSize()));
+            map.put(renderLayer,new MirageBufferBuilder(renderLayer.getExpectedBufferSize()));
         });
         return map;
     }

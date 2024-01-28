@@ -12,6 +12,7 @@ import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.fluid.FluidState;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockRenderView;
 import net.minecraft.world.World;
@@ -37,18 +38,37 @@ public class MirageWorldImpl extends MirageWorld {
             SpriteUtil.markSpriteActive(sprite);
         });
     }
-    public static boolean addToManualBlockRenderList(long blockPosKey, StateNEntity stateNEntity, Long2ObjectOpenHashMap<StateNEntity> manualRenderBlocks){
-        if(stateNEntity.blockState.getBlock() instanceof DecoBeaconBlock){
-            manualRenderBlocks.put(blockPosKey, stateNEntity);
-            return true;
+
+    public static void addFluidToAnimatedSprites(World world, BlockPos blockPos, FluidState fluidState, ObjectArrayList<Sprite> animatedSprites){
+        Sprite[] fluidSprites = ForgeHooksClient.getFluidSprites(world, blockPos, fluidState);
+        for(Sprite sprite:fluidSprites){
+            if(sprite==null){
+                continue;
+            }
+            if(sprite.getAnimation()!=null) {
+                if(!animatedSprites.contains(sprite)) {
+                    animatedSprites.add(sprite);
+                }
+            }
         }
+
+    }
+
+    public static boolean addToManualBlockRenderList(long blockPosKey, StateNEntity stateNEntity, Long2ObjectOpenHashMap<StateNEntity> manualRenderBlocks){
+        if(Platform.isModLoaded("decobeacon")) {
+            if (stateNEntity.blockState.getBlock() instanceof DecoBeaconBlock) {
+                manualRenderBlocks.put(blockPosKey, stateNEntity);
+                return true;
+            }
+        }
+
         return false;
     }
     public static boolean isOnTranslucentRenderLayer(BlockState blockState){
         return RenderLayers.canRenderInLayer(blockState,TRANSLUCENT_RENDER_LAYER);
     }
     public static void refreshVertexBuffersIfNeeded(BlockPos projectorPos, MirageWorld mirageWorld){
-        Boolean shadersEnabled = false;
+        boolean shadersEnabled = false;
         if(Platform.isModLoaded("oculus")){
             shadersEnabled = IrisApi.getInstance().getConfig().areShadersEnabled();
         }
@@ -62,7 +82,10 @@ public class MirageWorldImpl extends MirageWorld {
         }
     }
     public static boolean shouldRenderModelData(BlockEntity blockEntity){
-        return blockEntity instanceof FramedBlockEntity;
+        if(Platform.isModLoaded("framedblocks")) {
+            return blockEntity instanceof FramedBlockEntity;
+        }
+        return false;
     }
     public static void renderMirageModelData(BlockState state, BlockPos referencePos, BlockRenderView world, boolean cull, Random random, BlockEntity blockEntity, MatrixStack matrices, VertexConsumerProvider vertexConsumerProvider){
         IModelData modelData = blockEntity.getModelData();

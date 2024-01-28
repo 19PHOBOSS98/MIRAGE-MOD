@@ -16,6 +16,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.phoboss.mirage.Mirage;
 import net.phoboss.mirage.blocks.ModBlockEntities;
 import net.phoboss.mirage.utility.BookSettingsUtility;
 import net.phoboss.mirage.utility.ErrorResponse;
@@ -58,7 +59,7 @@ public class MirageBlock extends BlockWithEntity implements BlockEntityProvider,
                         return ActionResult.SUCCESS;
 
                     } else if (mainHandItemStack.hasNbt() && mainHandItemStack.getNbt().contains("pages")) {
-                        ActionResult result = executeBookProtocol(mainHandItemStack, state, world, pos, player, blockEntity);
+                        ActionResult result = executeBookProtocol(mainHandItemStack, state, world, pos, player, blockEntity, blockEntity.bookSettings);
                         if (result == ActionResult.FAIL) {
                             refreshBlockEntityBookSettings(state, blockEntity);
                         }
@@ -104,7 +105,8 @@ public class MirageBlock extends BlockWithEntity implements BlockEntityProvider,
                     mirageBlockEntity.setActiveLow(Boolean.parseBoolean(activeLow));
                 }
             } catch (Exception e) {
-                return ErrorResponse.onErrorActionResult(e, world, pos, player, "Invalid Entry: activeLow:" + activeLow);
+                Mirage.LOGGER.error("Invalid Entry: activeLow:" + activeLow, e);
+                return ErrorResponse.onErrorActionResult(world, pos, player, "Invalid Entry: activeLow:" + activeLow);
             }
 
             try {
@@ -112,7 +114,8 @@ public class MirageBlock extends BlockWithEntity implements BlockEntityProvider,
                     mirageBlockEntity.setFileName(fileName);
                 }
             } catch (Exception e) {
-                return ErrorResponse.onErrorActionResult(e, world, pos, player, "Invalid Entry: fileName:" + fileName);
+                Mirage.LOGGER.error("Invalid Entry: fileName:" + fileName, e);
+                return ErrorResponse.onErrorActionResult(world, pos, player, "Invalid Entry: fileName:" + fileName);
             }
 
             try {
@@ -120,7 +123,8 @@ public class MirageBlock extends BlockWithEntity implements BlockEntityProvider,
                     mirageBlockEntity.setMove(BookSettingsUtility.parseBookVec3i(move));
                 }
             } catch (Exception e) {
-                return ErrorResponse.onErrorActionResult(e, world, pos, player, "Invalid Entry: move:" + move);
+                Mirage.LOGGER.error("Invalid Entry: move:" + move, e);
+                return ErrorResponse.onErrorActionResult(world, pos, player, "Invalid Entry: move:" + move);
             }
 
             try {
@@ -131,7 +135,8 @@ public class MirageBlock extends BlockWithEntity implements BlockEntityProvider,
                     mirageBlockEntity.setRotate(rotate);
                 }
             } catch (Exception e) {
-                return ErrorResponse.onErrorActionResult(e, world, pos, player, "Invalid Entry: rotate:" + rotate);
+                Mirage.LOGGER.error("Invalid Entry: rotate:" + rotate, e);
+                return ErrorResponse.onErrorActionResult(world, pos, player, "Invalid Entry: rotate:" + rotate);
             }
 
             try {
@@ -142,7 +147,8 @@ public class MirageBlock extends BlockWithEntity implements BlockEntityProvider,
                     mirageBlockEntity.setMirror(mirror);
                 }
             } catch (Exception e) {
-                return ErrorResponse.onErrorActionResult(e, world, pos, player, "Invalid Entry: mirror:" + mirror);
+                Mirage.LOGGER.error("Invalid Entry: mirror:" + mirror, e);
+                return ErrorResponse.onErrorActionResult(world, pos, player, "Invalid Entry: mirror:" + mirror);
             }
         }
 

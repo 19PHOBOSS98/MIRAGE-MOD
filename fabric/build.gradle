@@ -37,6 +37,9 @@ repositories {
             includeGroup "maven.modrinth"
         }
     }
+    flatDir {
+        dirs 'lib'
+    }
     mavenCentral()
 }
 
@@ -49,11 +52,23 @@ dependencies {
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
 
-    //implementation("io.github.douira:glsl-transformer:2.0.0-pre14")
-    //implementation("org.anarres:jcpp:1.4.14")
-    //modLocalRuntime("maven.modrinth:YL57xq9U:ogIRhnAJ") //https://modrinth.com/mod/iris/version/1.6.11+1.18.2
-    //modLocalRuntime("maven.modrinth:AANobbMI:74Y5Z8fo") //https://modrinth.com/mod/sodium/version/mc1.18.2-0.4.1
     modRuntimeOnly "maven.modrinth:nELKzJ5C:RbIlcuU7" //https://modrinth.com/mod/open-simple-frames/version/RbIlcuU7
+    modRuntimeOnly "net.phoboss:decobeacon:0.0.1-1.18.2-Fabric"
+    modCompileOnlyApi "net.phoboss:decobeacon:0.0.1-1.18.2-Fabric"
+/*
+    implementation("io.github.douira:glsl-transformer:2.0.0-pre14")
+    implementation("org.anarres:jcpp:1.4.14")
+    modRuntimeOnly "maven.modrinth:YL57xq9U:ogIRhnAJ" //https://modrinth.com/mod/iris/version/1.6.11+1.18.2
+    modRuntimeOnly "maven.modrinth:AANobbMI:74Y5Z8fo" //https://modrinth.com/mod/sodium/version/mc1.18.2-0.4.1
+*/
+
+    /*implementation("io.github.douira:glsl-transformer:2.0.0-pre8")
+    implementation("org.anarres:jcpp:1.4.14")
+    modLocalRuntime("maven.modrinth:iris:1.6.11+1.18.2")*/
+
+    modCompileOnlyApi "maven.modrinth:YL57xq9U:ogIRhnAJ" //https://modrinth.com/mod/iris/version/1.6.11+1.18.2
+    modCompileOnlyApi "maven.modrinth:AANobbMI:74Y5Z8fo" //https://modrinth.com/mod/sodium/version/mc1.18.2-0.4.1
+
 }
 
 processResources {

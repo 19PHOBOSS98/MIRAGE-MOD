@@ -189,7 +189,8 @@ public class MirageBlockEntity extends BlockEntity {
             return NbtIo.readCompressed(nbtFile);
         }
         catch (Exception e) {
-            ErrorResponse.onError(e,world,pos,player,"Couldn't load file: "+nbtFile);
+            Mirage.LOGGER.error("Couldn't load file: "+nbtFile, e);
+            ErrorResponse.onError(world,pos,player,"Couldn't load file: "+nbtFile);
             return null;
         }
     }

@@ -24,9 +24,9 @@ import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.decoration.AbstractDecorationEntity;
+import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.vehicle.BoatEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.item.AirBlockItem;
@@ -37,7 +37,9 @@ import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
-import net.minecraft.util.math.*;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.DynamicRegistryManager;
 import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.world.*;
@@ -154,15 +156,8 @@ public class MirageWorld extends World implements ServerWorldAccess {
 
     public void render(BlockPos projectorPos,float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay){
         refreshVertexBuffersIfNeeded(projectorPos,this);
-        MatrixStack matrixStack = RenderSystem.getModelViewStack();
-        matrixStack.push();
-        matrixStack.multiplyPositionMatrix(matrices.peek().getPositionMatrix());
-        this.mirageBufferStorage.mirageVertexBuffers.forEach((renderLayer,vertexBuffer)->{
-            renderLayer.startDrawing();
-            vertexBuffer.setShader(matrixStack.peek().getPositionMatrix(), RenderSystem.getProjectionMatrix(),RenderSystem.getShader());
-            renderLayer.endDrawing();
-        });
-        matrixStack.pop();
+
+
 
         this.manualEntityList.forEach((blockPosKey,stateNEntity)-> {
             Entity fakeEntity = stateNEntity.entity;
@@ -180,6 +175,8 @@ public class MirageWorld extends World implements ServerWorldAccess {
             matrices.translate(relativePos.getX(),relativePos.getY(),relativePos.getZ());
             renderMirageBlock(block.blockState, fakeBlockPos, this, matrices, vertexConsumers, true, getRandom());
             matrices.pop();
+
+
         });
 
         this.bERBlocksList.forEach((key, block)->{//animated blocks (enchanting table...)
@@ -191,6 +188,16 @@ public class MirageWorld extends World implements ServerWorldAccess {
             matrices.pop();
         });
 
+        MatrixStack matrixStack = RenderSystem.getModelViewStack();
+        matrixStack.push();
+        matrixStack.multiplyPositionMatrix(matrices.peek().getPositionMatrix());
+        this.mirageBufferStorage.mirageVertexBuffers.forEach((renderLayer,vertexBuffer)->{
+            renderLayer.startDrawing();
+            vertexBuffer.setShader(matrixStack.peek().getPositionMatrix(), RenderSystem.getProjectionMatrix(),RenderSystem.getShader());
+            renderLayer.endDrawing();
+        });
+        matrixStack.pop();
+
         markAnimatedSprite(this.animatedSprites);
     }
 
@@ -199,18 +206,23 @@ public class MirageWorld extends World implements ServerWorldAccess {
         MatrixStack matrices = new MatrixStack();
         MirageImmediate vertexConsumers = this.mirageBufferStorage.getMirageImmediate();
 
+        this.setSearchOffset(projectorPos);
+
         this.vertexBufferBlocksList.forEach((fakeBlockPosKey, fakeStateNEntity)->{
             BlockPos fakeBlockPos = BlockPos.fromLong(fakeBlockPosKey);
             BlockState fakeBlockState = fakeStateNEntity.blockState;
             BlockEntity fakeBlockEntity = fakeStateNEntity.blockEntity;
             Entity fakeEntity = fakeStateNEntity.entity;
+            FluidState fakeFluidState = fakeStateNEntity.fluidState;
 
             if (fakeEntity != null) {
+
                 matrices.push();
                 Vec3d entityPos = fakeEntity.getPos().subtract(new Vec3d(projectorPos.getX(),projectorPos.getY(),projectorPos.getZ()));
                 matrices.translate(entityPos.getX(),entityPos.getY(),entityPos.getZ());
                 renderMirageEntity(fakeEntity, 0, matrices, vertexConsumers);
                 matrices.pop();
+
             }
 
             matrices.push();
@@ -225,8 +237,17 @@ public class MirageWorld extends World implements ServerWorldAccess {
                 }
             }
 
+
             if (fakeBlockState != null) {
-                renderMirageBlock(fakeBlockState, fakeBlockPos, this, matrices, vertexConsumers, true, getRandom());
+                if(!fakeFluidState.isEmpty()) {
+                    this.searchByRelativeOffset(true);
+                    vertexConsumers.setActualPos(relativePos);
+                    renderMirageFluid(fakeBlockState, fakeFluidState, relativePos, this, vertexConsumers);
+                    vertexConsumers.setActualPos(new BlockPos(relativePos.getX()&15,relativePos.getY()&15,relativePos.getZ()&15));
+                    this.searchByRelativeOffset(false);
+                }else {
+                    renderMirageBlock(fakeBlockState, fakeBlockPos, this, matrices, vertexConsumers, true, getRandom());
+                }
             }
             matrices.pop();
         });
@@ -243,6 +264,11 @@ public class MirageWorld extends World implements ServerWorldAccess {
     //WIP Embeddium compat
     @ExpectPlatform
     public static void markAnimatedSprite(ObjectArrayList<Sprite> animatedSprites){
+        throw new AssertionError();
+    }
+
+    @ExpectPlatform
+    public static void addFluidToAnimatedSprites(World world, BlockPos blockPos, FluidState fluidState, ObjectArrayList<Sprite> animatedSprites){
         throw new AssertionError();
     }
 
@@ -272,16 +298,17 @@ public class MirageWorld extends World implements ServerWorldAccess {
             });
         }
 
+
     }
     //WIP Embeddium compat
 
     @ExpectPlatform
     public static boolean isOnTranslucentRenderLayer(BlockState blockState){
-        return RenderLayers.getEntityBlockLayer(blockState,true) == RenderLayer.getTranslucent();
+        throw new AssertionError();
     }
     @ExpectPlatform
     public static boolean addToManualBlockRenderList(long blockPosKey, StateNEntity stateNEntity, Long2ObjectOpenHashMap<StateNEntity> manualRenderBlocks){
-        return false;
+        throw new AssertionError();
     }
 
     public void clearMirageWorld(){
@@ -308,21 +335,53 @@ public class MirageWorld extends World implements ServerWorldAccess {
         }
     }
 
-    public void addPassengersToManualEntityRenderList(long blockPosKey,Entity entity){
-
-    }
     public void addToManualEntityRenderList(long blockPosKey,Entity entity){
         if(entity == null){
             return;
         }
 
-        if(entity.hasPassengers()){
+        if(entity instanceof AbstractDecorationEntity){
+            this.vertexBufferBlocksList.put(blockPosKey, new StateNEntity(entity));
+            return;
+        }
+
+        if(entity instanceof ArmorStandEntity armorStandEntity){
+            ItemStack mainHandItem = armorStandEntity.getEquippedStack(EquipmentSlot.MAINHAND);
+            ItemStack offHandItem = armorStandEntity.getEquippedStack(EquipmentSlot.OFFHAND);
+            boolean hasItem = !(mainHandItem.isEmpty() && offHandItem.isEmpty());//mainWorld blockEntities start floating if VertexBuffers render armor-stands that are equipped with something... best to just render them manually
+
+            Iterator<ItemStack> equippedArmor = entity.getArmorItems().iterator();
+            boolean clothed = false;
+            while(equippedArmor.hasNext()){
+                ItemStack itemStack = equippedArmor.next();
+                if(!(itemStack.getItem() instanceof AirBlockItem)){
+                    clothed = true;
+                    break;
+                }
+            }
+
+            if(hasItem||clothed){
+                this.manualEntityList.put(blockPosKey,new StateNEntity(entity));
+                return;
+            }
+            this.vertexBufferBlocksList.put(blockPosKey, new StateNEntity(entity));
+            return;
+        }
+
+        this.manualEntityList.put(blockPosKey,new StateNEntity(entity));
+
+
+
+
+
+
+        /*if(entity.hasPassengers()){//still needs work
             List<Entity> passengers = entity.getPassengerList();
             passengers.forEach((passenger)->{
-                //this.addToManualEntityRenderList(blockPosKey,passenger);
+                this.addToManualEntityRenderList(blockPosKey,passenger);
             });
-        }
-        Iterator<ItemStack> equippedArmor = entity.getArmorItems().iterator();
+        }*/
+        /*Iterator<ItemStack> equippedArmor = entity.getArmorItems().iterator();
         boolean hasArmor = false;
         while(equippedArmor.hasNext()){
             ItemStack itemStack = equippedArmor.next();
@@ -341,7 +400,21 @@ public class MirageWorld extends World implements ServerWorldAccess {
             this.manualEntityList.put(blockPosKey,new StateNEntity(entity));
             return;
         }
-        this.vertexBufferBlocksList.put(blockPosKey,new StateNEntity(entity));
+        if(entity instanceof AbstractDecorationEntity) {
+            this.vertexBufferBlocksList.put(blockPosKey, new StateNEntity(entity));
+            return;
+        }
+        if(entity instanceof ArmorStandEntity) {
+            this.vertexBufferBlocksList.put(blockPosKey, new StateNEntity(entity));
+            return;
+        }
+        if(entity instanceof AbstractMinecartEntity) {
+            this.vertexBufferBlocksList.put(blockPosKey, new StateNEntity(entity));
+            return;
+        }
+        if(entity instanceof PandaEntity) {
+            //this.vertexBufferBlocksList.put(blockPosKey, new StateNEntity(entity));
+        }*/
     }
 
     public void initBlockRenderLists() {
@@ -349,6 +422,7 @@ public class MirageWorld extends World implements ServerWorldAccess {
             BlockState blockState = stateNEntity.blockState;
             BlockEntity blockEntity = stateNEntity.blockEntity;
             Entity entity = stateNEntity.entity;
+
             addToAnimatedSprites(blockState,getRandom());
 
             if(entity != null){
@@ -369,6 +443,8 @@ public class MirageWorld extends World implements ServerWorldAccess {
             }
 
             if(blockState != null) {
+
+                addFluidToAnimatedSprites(this, BlockPos.fromLong(blockPosKey), blockState.getFluidState(), this.animatedSprites);
                 if (isOnTranslucentRenderLayer(blockState)) {
                     this.manualBlocksList.put(blockPosKey, new StateNEntity(blockState));
                     return;
@@ -377,6 +453,7 @@ public class MirageWorld extends World implements ServerWorldAccess {
 
             this.vertexBufferBlocksList.put(blockPosKey,stateNEntity);
         });
+
     }
 
     public static void renderMirageBlockEntity(BlockEntity blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers){
@@ -390,6 +467,12 @@ public class MirageWorld extends World implements ServerWorldAccess {
         blockRenderManager.renderBlock(state,referencePos,world,matrices,
                 vertexConsumerProvider.getBuffer(rl),cull,random);
     }
+    public static void renderMirageFluid(BlockState state, FluidState fluidState, BlockPos referencePos, BlockRenderView world, VertexConsumerProvider vertexConsumerProvider){
+        RenderLayer rl = RenderLayers.getFluidLayer(fluidState);
+        blockRenderManager.renderFluid(referencePos, world, vertexConsumerProvider.getBuffer(rl), state, fluidState);
+    }
+
+
     @ExpectPlatform
     public static void renderMirageModelData(BlockState state, BlockPos referencePos, BlockRenderView world, boolean cull, Random random, BlockEntity blockEntity, MatrixStack matrices, VertexConsumerProvider vertexConsumerProvider){
         throw new AssertionError();
@@ -477,11 +560,28 @@ public class MirageWorld extends World implements ServerWorldAccess {
     }
 
 
+    public BlockPos searchOffset = new BlockPos(0,0,0);
+    public boolean searchByRelativeOffset = false;
 
+    public void searchByRelativeOffset(boolean searchByRelativeOffset) {
+        this.searchByRelativeOffset = searchByRelativeOffset;
+    }
+
+    public void setSearchOffset(BlockPos projectorOffset) {
+        this.searchOffset = projectorOffset;
+    }
+
+    public BlockPos getRelativeOffset(BlockPos blockPos){//For rendering Fluids
+        if(searchByRelativeOffset){
+            return blockPos.add(searchOffset);
+        }
+        return blockPos;
+    }
     @Nullable
     @Override
     public BlockEntity getBlockEntity(BlockPos pos) {
-        long key = pos.asLong();
+
+        long key = getRelativeOffset(pos).asLong();
         StateNEntity entry = this.mirageStateNEntities.get(key);
         if(entry == null) {
             return null;
@@ -493,7 +593,7 @@ public class MirageWorld extends World implements ServerWorldAccess {
     }
     @Override
     public BlockState getBlockState(BlockPos pos) {
-        long key = pos.asLong();
+        long key = getRelativeOffset(pos).asLong();
         if(this.mirageStateNEntities.containsKey(key)) {
             BlockState blockState = this.mirageStateNEntities.get(key).blockState;
             if ( blockState != null) {
@@ -504,7 +604,7 @@ public class MirageWorld extends World implements ServerWorldAccess {
     }
     @Override
     public FluidState getFluidState(BlockPos pos) {
-        long key = pos.asLong();
+        long key = getRelativeOffset(pos).asLong();
         if(this.mirageStateNEntities.containsKey(key)) {
             FluidState fluidState = this.mirageStateNEntities.get(key).fluidState;
             if (fluidState != null) {
