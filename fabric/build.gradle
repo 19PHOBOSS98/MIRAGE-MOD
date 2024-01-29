@@ -62,9 +62,11 @@ dependencies {
     modRuntimeOnly "maven.modrinth:AANobbMI:74Y5Z8fo" //https://modrinth.com/mod/sodium/version/mc1.18.2-0.4.1
 */
 
-    /*implementation("io.github.douira:glsl-transformer:2.0.0-pre8")
+    // https://mvnrepository.com/artifact/org.joml/joml
+    implementation 'org.joml:joml:1.10.5'
+    implementation("io.github.douira:glsl-transformer:2.0.0")
     implementation("org.anarres:jcpp:1.4.14")
-    modLocalRuntime("maven.modrinth:iris:1.6.11+1.18.2")*/
+    modRuntimeOnly("maven.modrinth:iris:1.6.11+1.18.2")
 
     modCompileOnlyApi "maven.modrinth:YL57xq9U:ogIRhnAJ" //https://modrinth.com/mod/iris/version/1.6.11+1.18.2
     modCompileOnlyApi "maven.modrinth:AANobbMI:74Y5Z8fo" //https://modrinth.com/mod/sodium/version/mc1.18.2-0.4.1
