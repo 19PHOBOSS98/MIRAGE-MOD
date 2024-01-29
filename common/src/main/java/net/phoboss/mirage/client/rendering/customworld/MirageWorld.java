@@ -1,6 +1,7 @@
 package net.phoboss.mirage.client.rendering.customworld;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import dev.architectury.hooks.fluid.FluidStackHooks;
 import dev.architectury.injectables.annotations.ExpectPlatform;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -267,9 +268,20 @@ public class MirageWorld extends World implements ServerWorldAccess {
         throw new AssertionError();
     }
 
-    @ExpectPlatform
+
     public static void addFluidToAnimatedSprites(World world, BlockPos blockPos, FluidState fluidState, ObjectArrayList<Sprite> animatedSprites){
-        throw new AssertionError();
+        Sprite stillSprite = FluidStackHooks.getStillTexture(world, blockPos, fluidState);
+        if(stillSprite!=null && stillSprite.getAnimation()!=null) {
+            if(!animatedSprites.contains(stillSprite)) {
+                animatedSprites.add(stillSprite);
+            }
+        }
+        Sprite flowingSprite = FluidStackHooks.getFlowingTexture(world, blockPos, fluidState);
+        if(flowingSprite!=null && flowingSprite.getAnimation()!=null) {
+            if(!animatedSprites.contains(flowingSprite)) {
+                animatedSprites.add(flowingSprite);
+            }
+        }
     }
 
     public void addToAnimatedSprites(BakedQuad quad){
@@ -443,8 +455,10 @@ public class MirageWorld extends World implements ServerWorldAccess {
             }
 
             if(blockState != null) {
+                if(!blockState.getFluidState().isEmpty()){
+                    addFluidToAnimatedSprites(this, BlockPos.fromLong(blockPosKey), blockState.getFluidState(), this.animatedSprites);
+                }
 
-                addFluidToAnimatedSprites(this, BlockPos.fromLong(blockPosKey), blockState.getFluidState(), this.animatedSprites);
                 if (isOnTranslucentRenderLayer(blockState)) {
                     this.manualBlocksList.put(blockPosKey, new StateNEntity(blockState));
                     return;

@@ -12,7 +12,6 @@ import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.fluid.FluidState;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockRenderView;
 import net.minecraft.world.World;
@@ -37,21 +36,6 @@ public class MirageWorldImpl extends MirageWorld {
         animatedSprites.forEach((sprite)->{
             SpriteUtil.markSpriteActive(sprite);
         });
-    }
-
-    public static void addFluidToAnimatedSprites(World world, BlockPos blockPos, FluidState fluidState, ObjectArrayList<Sprite> animatedSprites){
-        Sprite[] fluidSprites = ForgeHooksClient.getFluidSprites(world, blockPos, fluidState);
-        for(Sprite sprite:fluidSprites){
-            if(sprite==null){
-                continue;
-            }
-            if(sprite.getAnimation()!=null) {
-                if(!animatedSprites.contains(sprite)) {
-                    animatedSprites.add(sprite);
-                }
-            }
-        }
-
     }
 
     public static boolean addToManualBlockRenderList(long blockPosKey, StateNEntity stateNEntity, Long2ObjectOpenHashMap<StateNEntity> manualRenderBlocks){
