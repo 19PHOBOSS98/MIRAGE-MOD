@@ -47,41 +47,30 @@ public class MirageBlock extends BlockWithEntity implements BlockEntityProvider,
 
     @Override
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
-
             ItemStack mainHandItemStack = player.getMainHandStack();
             Item mainHandItem = player.getMainHandStack().getItem();
             if (hand == Hand.MAIN_HAND) {
                 if(!world.isClient()) {
                     MirageBlockEntity blockEntity = (MirageBlockEntity) world.getBlockEntity(pos);
-
                     if (mainHandItem == Items.REDSTONE_TORCH) {
                         blockEntity.setActiveLow(!blockEntity.isActiveLow());
                         return ActionResult.SUCCESS;
-
                     } else if (mainHandItemStack.hasNbt() && mainHandItemStack.getNbt().contains("pages")) {
-                        ActionResult result = executeBookProtocol(mainHandItemStack, state, world, pos, player, blockEntity, blockEntity.bookSettings);
-                        if (result == ActionResult.FAIL) {
-                            refreshBlockEntityBookSettings(state, blockEntity);
+                        try {
+                            ActionResult result = executeBookProtocol(mainHandItemStack, state, world, pos, player, blockEntity, blockEntity.bookSettings);
+                            if (result == ActionResult.FAIL) {
+                                refreshBlockEntityBookSettings(state, blockEntity);
+                            }
+                            loadMirage(blockEntity, player);
+                            return result;
+                        }catch (Exception e){
+                            Mirage.LOGGER.error(e.getMessage(),e);
+                            return ActionResult.FAIL;
                         }
-                /*
-                //TEST SCHEMATICS
-                fileName = "miragetestingwentities";
-                String fileName = "test";
-                String fileName = "redstonetest";
-                String fileName = "mirage1";
-                String fileName = "paintings";
-                String fileName = "portal1";
-                String fileName = "warp";
-                */
-                        loadMirage(blockEntity, player);
-                        return result;
                     }
                 }
-
-
                 return ActionResult.SUCCESS;
             }
-
         return ActionResult.PASS;
     }
 
@@ -160,10 +149,13 @@ public class MirageBlock extends BlockWithEntity implements BlockEntityProvider,
         if(blockEntity instanceof MirageBlockEntity mirageBlockEntity){
             mirageBlockEntity.bookSettings.put("activeLow",Boolean.toString(mirageBlockEntity.isActiveLow()));
             mirageBlockEntity.bookSettings.put("fileName",mirageBlockEntity.getFileName());
-
-            mirageBlockEntity.bookSettings.put("move",BookSettingsUtility.convertToString(mirageBlockEntity.getMove()));
             mirageBlockEntity.bookSettings.put("rotate",mirageBlockEntity.getRotate());
             mirageBlockEntity.bookSettings.put("mirror",mirageBlockEntity.getMirror());
+            try{
+                mirageBlockEntity.bookSettings.put("move",BookSettingsUtility.convertToString(mirageBlockEntity.getMove()));
+            }catch (Exception e) {
+                mirageBlockEntity.bookSettings.put("move","0,0,0");
+            }
         }
     }
 
