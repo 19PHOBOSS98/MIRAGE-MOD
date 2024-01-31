@@ -1,7 +1,7 @@
 package net.phoboss.mirage.blocks.mirageprojector;
 
+import com.google.gson.Gson;
 import dev.architectury.platform.Platform;
-import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
@@ -12,9 +12,6 @@ import net.minecraft.network.Packet;
 import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.structure.StructurePlacementData;
-import net.minecraft.util.BlockMirror;
-import net.minecraft.util.BlockRotation;
-import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3i;
@@ -23,108 +20,61 @@ import net.phoboss.mirage.Mirage;
 import net.phoboss.mirage.blocks.ModBlockEntities;
 import net.phoboss.mirage.client.rendering.customworld.MirageStructure;
 import net.phoboss.mirage.client.rendering.customworld.MirageWorld;
+import net.phoboss.mirage.client.rendering.customworld.StructureStates;
 import net.phoboss.mirage.utility.ErrorResponse;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 
 public class MirageBlockEntity extends BlockEntity {
     public static Path SCHEMATICS_FOLDER = Platform.getGameFolder().resolve("schematics");
-    public static List<String> MIRROR_STATES_KEYS = Util.make(new ArrayList<>(), (map) -> {
-        map.add("NONE");
-        map.add("FRONT_BACK");
-        map.add("LEFT_RIGHT");
-    });
-    public static List<String> ROTATION_STATES_KEYS = Util.make(new ArrayList<>(), (map) -> {
-        map.add("0");
-        map.add("90");
-        map.add("180");
-        map.add("270");
-    });
-    public static Object2ObjectLinkedOpenHashMap<String, BlockMirror> MIRROR_STATES = Util.make(new Object2ObjectLinkedOpenHashMap<>(), (map) -> {
-        map.put(MIRROR_STATES_KEYS.get(0),BlockMirror.NONE);
-        map.put(MIRROR_STATES_KEYS.get(1),BlockMirror.FRONT_BACK);
-        map.put(MIRROR_STATES_KEYS.get(2),BlockMirror.LEFT_RIGHT);
-    });
-    public static Object2ObjectLinkedOpenHashMap<String, BlockRotation> ROTATION_STATES = Util.make(new Object2ObjectLinkedOpenHashMap<>(), (map) -> {
-        map.put(ROTATION_STATES_KEYS.get(0),BlockRotation.NONE);
-        map.put(ROTATION_STATES_KEYS.get(1),BlockRotation.CLOCKWISE_90);
-        map.put(ROTATION_STATES_KEYS.get(2),BlockRotation.CLOCKWISE_180);
-        map.put(ROTATION_STATES_KEYS.get(3),BlockRotation.COUNTERCLOCKWISE_90);
-    });
+
     public NbtCompound schematic = new NbtCompound();
-    public Object2ObjectLinkedOpenHashMap<String,String> bookSettings;
-    public Vec3i move = new Vec3i(0,0,0);
-    public boolean activeLow = false;
-    public String rotate = ROTATION_STATES_KEYS.get(0);
-    public String mirror = MIRROR_STATES_KEYS.get(0);
-    public String fileName = "";//filename(s) here
 
     public void setActiveLow(boolean activeLow) {
-        this.activeLow = activeLow;
-        bookSettings.put("activeLow",Boolean.toString(activeLow));//ServerSide doesn't update without it...
+        this.bookSettingsPOJO.setActiveLow(activeLow);
         markDirty();
     }
     public void setMove(Vec3i move) {
-        this.move = move;
-        bookSettings.put("move",move.getX()+","+move.getY()+","+move.getZ());
+        this.bookSettingsPOJO.setMove(move);
         markDirty();
     }
     public void setRotate(String rotate) {
-        this.rotate = rotate;
-        bookSettings.put("rotate",rotate);
+        this.bookSettingsPOJO.setRotate(Integer.parseInt(rotate));
         markDirty();
     }
     public void setMirror(String mirror) {
-        this.mirror = mirror;
-        bookSettings.put("mirror",mirror);
+        this.bookSettingsPOJO.setMirror(mirror);
         markDirty();
     }
     public void setFileName(String fileName) {
-        this.fileName = fileName;
-        bookSettings.put("fileName",fileName);
+        this.bookSettingsPOJO.setFile(fileName);
         markDirty();
     }
     public boolean isActiveLow() {
-        return activeLow;
+        return this.bookSettingsPOJO.isActiveLow();
     }
     public Vec3i getMove() {
-        return move;
+        return this.bookSettingsPOJO.getMoveVec3i();
     }
-    public String getRotate() {
-        return rotate;
+    public int getRotate() {
+        return this.bookSettingsPOJO.getRotate();
     }
     public String getMirror() {
-        return mirror;
+        return this.bookSettingsPOJO.getMirror();
     }
     public String getFileName() {
-        return fileName;
+        return this.bookSettingsPOJO.getFile();
     }
 
-    public Object2ObjectLinkedOpenHashMap<String,String> setupBookSettings(){
-        Object2ObjectLinkedOpenHashMap<String,String> map = new Object2ObjectLinkedOpenHashMap<>();
-        map.put("activeLow","false");
-        map.put("move","0,0,0");//X,Y,Z
-        map.put("rotate",ROTATION_STATES_KEYS.get(0));
-        map.put("mirror",MIRROR_STATES_KEYS.get(0));
-        map.put("fileName","");
-        /*
-        map.put("autoPlay","false");// stepPlay if false
-        map.put("speed","1.0");// animation speed
-        map.put("loop","false");// animation loop
-         */
-        return map;
-    }
     private MirageWorld mirageWorld;
 
     public MirageBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MIRAGE_BLOCK.get(), pos, state);
-        bookSettings = this.setupBookSettings();
+        bookSettingsPOJO = new MirageProjectorBook();
     }
 
     public NbtCompound getSchematic(){
@@ -157,8 +107,8 @@ public class MirageBlockEntity extends BlockEntity {
         StructurePlacementData structurePlacementData = new StructurePlacementData();
         structurePlacementData.setIgnoreEntities(false);
 
-        structurePlacementData.setRotation(ROTATION_STATES.get(getRotate()));
-        structurePlacementData.setMirror(MIRROR_STATES.get(getMirror()));
+        structurePlacementData.setRotation(StructureStates.ROTATION_STATES.get(getRotate()));
+        structurePlacementData.setMirror(StructureStates.MIRROR_STATES.get(getMirror()));
 
         mirageWorld.clearMirageWorld();
         fakeStructure.place(mirageWorld,pos,pos,structurePlacementData,mirageWorld.random,Block.NOTIFY_ALL);
@@ -212,16 +162,23 @@ public class MirageBlockEntity extends BlockEntity {
         return mirageWorld;
     }
 
+    public MirageProjectorBook bookSettingsPOJO;
+
+    public MirageProjectorBook getBookSettingsPOJO() {
+        return bookSettingsPOJO;
+    }
+
+    public void setBookSettingsPOJO(MirageProjectorBook bookSettingsPOJO) {
+        this.bookSettingsPOJO = bookSettingsPOJO;
+    }
 
     @Override
     protected void writeNbt(NbtCompound nbt) {
+
+        nbt.putString("bookJSON",new Gson().toJson(this.bookSettingsPOJO));
+
         nbt.put("scheme",getSchematic());
-        int[] move = {getMove().getX(),getMove().getY(),getMove().getZ()};
-        nbt.putIntArray("move",move);
-        nbt.putBoolean("activeLow",isActiveLow());
-        nbt.putString("rotate",getRotate());
-        nbt.putString("mirror",getMirror());
-        nbt.putString("fileName",getFileName());
+
         super.writeNbt(nbt);
     }
 
@@ -229,20 +186,12 @@ public class MirageBlockEntity extends BlockEntity {
     public void readNbt(NbtCompound nbt) {
         super.readNbt(nbt);
         try{
+            String bookString = nbt.getString("bookJSON");
+
+            this.bookSettingsPOJO = bookString.isEmpty() ? new MirageProjectorBook() : new Gson().fromJson(bookString, MirageProjectorBook.class);
+
+
             this.schematic = Objects.requireNonNullElse((NbtCompound) nbt.get("scheme"), new NbtCompound());
-
-            int[] moveArray = nbt.getIntArray("move");
-            this.move = new Vec3i(moveArray[0],moveArray[1],moveArray[2]);
-            this.activeLow = nbt.getBoolean("activeLow");
-            this.rotate = nbt.getString("rotate");
-            this.mirror = nbt.getString("mirror");
-            this.fileName = nbt.getString("fileName");
-
-            this.bookSettings.put("activeLow",Boolean.toString(this.activeLow));
-            this.bookSettings.put("move",this.move.getX()+","+this.move.getY()+","+this.move.getZ());
-            this.bookSettings.put("rotate",this.rotate);
-            this.bookSettings.put("mirror",this.mirror);
-            this.bookSettings.put("fileName",this.fileName);
 
             if(this.mirageWorld != null) {
                 loadScheme();

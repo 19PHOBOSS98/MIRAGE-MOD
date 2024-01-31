@@ -1,5 +1,6 @@
 package net.phoboss.mirage.blocks.mirageprojector;
 
+import com.google.gson.JsonObject;
 import net.minecraft.block.BlockEntityProvider;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
@@ -21,8 +22,6 @@ import net.phoboss.mirage.blocks.ModBlockEntities;
 import net.phoboss.mirage.utility.BookSettingsUtility;
 import net.phoboss.mirage.utility.ErrorResponse;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Map;
 
 public class MirageBlock extends BlockWithEntity implements BlockEntityProvider, BookSettingsUtility {
     public MirageBlock(Settings settings) {
@@ -57,14 +56,12 @@ public class MirageBlock extends BlockWithEntity implements BlockEntityProvider,
                         return ActionResult.SUCCESS;
                     } else if (mainHandItemStack.hasNbt() && mainHandItemStack.getNbt().contains("pages")) {
                         try {
-                            ActionResult result = executeBookProtocol(mainHandItemStack, state, world, pos, player, blockEntity, blockEntity.bookSettings);
-                            if (result == ActionResult.FAIL) {
-                                refreshBlockEntityBookSettings(state, blockEntity);
-                            }
+                            executeBookProtocol(mainHandItemStack, blockEntity, blockEntity.bookSettingsPOJO);
                             loadMirage(blockEntity, player);
-                            return result;
+                            return ActionResult.SUCCESS;
                         }catch (Exception e){
                             Mirage.LOGGER.error(e.getMessage(),e);
+                            ErrorResponse.onError(world,pos,player,e.getMessage());
                             return ActionResult.FAIL;
                         }
                     }
@@ -75,87 +72,10 @@ public class MirageBlock extends BlockWithEntity implements BlockEntityProvider,
     }
 
     @Override
-    public ActionResult implementBookSettings(  BlockState state,
-                                                World world,
-                                                BlockPos pos,
-                                                PlayerEntity player,
-                                                BlockEntity blockEntity,
-                                                Map<String, String> bookSettings) {
-
+    public void implementBookSettings(BlockEntity blockEntity, JsonObject newSettings) throws Exception{
         if(blockEntity instanceof MirageBlockEntity mirageBlockEntity){
-            String activeLow = bookSettings.get("activeLow");
-            String fileName = bookSettings.get("fileName");
-
-            String move = bookSettings.get("move");
-            String rotate = bookSettings.get("rotate");
-            String mirror = bookSettings.get("mirror");
-            try {
-                if (!activeLow.isEmpty()) {
-                    mirageBlockEntity.setActiveLow(Boolean.parseBoolean(activeLow));
-                }
-            } catch (Exception e) {
-                Mirage.LOGGER.error("Invalid Entry: activeLow:" + activeLow, e);
-                return ErrorResponse.onErrorActionResult(world, pos, player, "Invalid Entry: activeLow:" + activeLow);
-            }
-
-            try {
-                if (!fileName.isEmpty()) {
-                    mirageBlockEntity.setFileName(fileName);
-                }
-            } catch (Exception e) {
-                Mirage.LOGGER.error("Invalid Entry: fileName:" + fileName, e);
-                return ErrorResponse.onErrorActionResult(world, pos, player, "Invalid Entry: fileName:" + fileName);
-            }
-
-            try {
-                if (!move.isEmpty()) {
-                    mirageBlockEntity.setMove(BookSettingsUtility.parseBookVec3i(move));
-                }
-            } catch (Exception e) {
-                Mirage.LOGGER.error("Invalid Entry: move:" + move, e);
-                return ErrorResponse.onErrorActionResult(world, pos, player, "Invalid Entry: move:" + move);
-            }
-
-            try {
-                if (!rotate.isEmpty()) {
-                    if(!MirageBlockEntity.ROTATION_STATES_KEYS.contains(rotate)){
-                        throw new Exception();
-                    }
-                    mirageBlockEntity.setRotate(rotate);
-                }
-            } catch (Exception e) {
-                Mirage.LOGGER.error("Invalid Entry: rotate:" + rotate, e);
-                return ErrorResponse.onErrorActionResult(world, pos, player, "Invalid Entry: rotate:" + rotate);
-            }
-
-            try {
-                if (!mirror.isEmpty()) {
-                    if(!MirageBlockEntity.MIRROR_STATES_KEYS.contains(mirror)){
-                        throw new Exception();
-                    }
-                    mirageBlockEntity.setMirror(mirror);
-                }
-            } catch (Exception e) {
-                Mirage.LOGGER.error("Invalid Entry: mirror:" + mirror, e);
-                return ErrorResponse.onErrorActionResult(world, pos, player, "Invalid Entry: mirror:" + mirror);
-            }
-        }
-
-        return ActionResult.SUCCESS;
-    }
-
-    @Override
-    public void refreshBlockEntityBookSettings(BlockState blockState, BlockEntity blockEntity) {
-        if(blockEntity instanceof MirageBlockEntity mirageBlockEntity){
-            mirageBlockEntity.bookSettings.put("activeLow",Boolean.toString(mirageBlockEntity.isActiveLow()));
-            mirageBlockEntity.bookSettings.put("fileName",mirageBlockEntity.getFileName());
-            mirageBlockEntity.bookSettings.put("rotate",mirageBlockEntity.getRotate());
-            mirageBlockEntity.bookSettings.put("mirror",mirageBlockEntity.getMirror());
-            try{
-                mirageBlockEntity.bookSettings.put("move",BookSettingsUtility.convertToString(mirageBlockEntity.getMove()));
-            }catch (Exception e) {
-                mirageBlockEntity.bookSettings.put("move","0,0,0");
-            }
+            MirageProjectorBook newBook = MirageProjectorBook.validateNewBookSettings(newSettings);
+            mirageBlockEntity.setBookSettingsPOJO(newBook);
         }
     }
 
