@@ -195,7 +195,6 @@ public class MirageWorld extends World implements ServerWorldAccess {
         this.vertexBufferBlocksList.forEach((fakeBlockPosKey, fakeStateNEntity)->{
             BlockPos fakeBlockPos = BlockPos.fromLong(fakeBlockPosKey);
             BlockState fakeBlockState = fakeStateNEntity.blockState;
-            FluidState fakeFluidState = fakeBlockState.getFluidState();
             BlockEntity fakeBlockEntity = fakeStateNEntity.blockEntity;
             Entity fakeEntity = fakeStateNEntity.entity;
 
@@ -224,6 +223,7 @@ public class MirageWorld extends World implements ServerWorldAccess {
 
 
             if (fakeBlockState != null) {
+                FluidState fakeFluidState = fakeBlockState.getFluidState();
                 if(!fakeFluidState.isEmpty()) {
                     this.searchByRelativeOffset(true);
                     vertexConsumers.setActualPos(relativePos);
