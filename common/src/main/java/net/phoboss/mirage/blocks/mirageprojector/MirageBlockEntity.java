@@ -30,6 +30,11 @@ import java.util.Objects;
 
 
 public class MirageBlockEntity extends BlockEntity {
+    public MirageBlockEntity(BlockPos pos, BlockState state) {
+        super(ModBlockEntities.MIRAGE_BLOCK.get(), pos, state);
+        bookSettingsPOJO = new MirageProjectorBook();
+    }
+
     public static Path SCHEMATICS_FOLDER = Platform.getGameFolder().resolve("schematics");
 
     public NbtCompound schematic = new NbtCompound();
@@ -72,10 +77,7 @@ public class MirageBlockEntity extends BlockEntity {
 
     private MirageWorld mirageWorld;
 
-    public MirageBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.MIRAGE_BLOCK.get(), pos, state);
-        bookSettingsPOJO = new MirageProjectorBook();
-    }
+
 
     public NbtCompound getSchematic(){
         if(schematic == null){

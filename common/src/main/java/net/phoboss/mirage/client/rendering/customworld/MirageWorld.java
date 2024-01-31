@@ -59,7 +59,27 @@ import java.util.List;
 import java.util.Random;
 
 public class MirageWorld extends World implements ServerWorldAccess {
+    public MirageWorld(World world) {
+        super((MutableWorldProperties) world.getLevelProperties(),
+                world.getRegistryKey(),
+                world.method_40134(),
+                world::getProfiler,
+                world.isClient(),
+                world.isDebugWorld(),
+                0);
+        this.world = world;
+        this.mirageBlockEntityTickers = new ObjectArrayList<>();
+        this.animatedSprites = new ObjectArrayList<>();
+        this.mirageStateNEntities = new Long2ObjectOpenHashMap<>();
+        this.bERBlocksList = new Long2ObjectOpenHashMap<>();
+        this.vertexBufferBlocksList = new Long2ObjectOpenHashMap<>();
+        this.manualBlocksList = new Long2ObjectOpenHashMap<>();
+        this.manualEntityList = new Long2ObjectOpenHashMap<>();
 
+        setChunkManager(new MirageChunkManager(this));
+
+        this.mirageBufferStorage = new MirageBufferStorage();
+    }
     public static MinecraftClient mc = MinecraftClient.getInstance();
     public static BlockRenderManager blockRenderManager = mc.getBlockRenderManager();
     public static BlockEntityRenderDispatcher blockEntityRenderDispatcher = mc.getBlockEntityRenderDispatcher();
@@ -112,27 +132,7 @@ public class MirageWorld extends World implements ServerWorldAccess {
     protected Long2ObjectOpenHashMap<BlockWEntity> bERBlocksList;
     private MirageBufferStorage mirageBufferStorage;
 
-    public MirageWorld(World world) {
-        super((MutableWorldProperties) world.getLevelProperties(),
-                world.getRegistryKey(),
-                world.method_40134(),
-                world::getProfiler,
-                world.isClient(),
-                world.isDebugWorld(),
-                0);
-        this.world = world;
-        this.mirageBlockEntityTickers = new ObjectArrayList<>();
-        this.animatedSprites = new ObjectArrayList<>();
-        this.mirageStateNEntities = new Long2ObjectOpenHashMap<>();
-        this.bERBlocksList = new Long2ObjectOpenHashMap<>();
-        this.vertexBufferBlocksList = new Long2ObjectOpenHashMap<>();
-        this.manualBlocksList = new Long2ObjectOpenHashMap<>();
-        this.manualEntityList = new Long2ObjectOpenHashMap<>();
 
-        setChunkManager(new MirageChunkManager(this));
-
-        this.mirageBufferStorage = new MirageBufferStorage();
-    }
 
     public boolean newlyRefreshedBuffers = true;
     public boolean overideRefreshBuffer = true;
