@@ -23,79 +23,132 @@ import net.phoboss.mirage.client.rendering.customworld.StructureStates;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class MirageBlockEntity extends BlockEntity {
     public MirageBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MIRAGE_BLOCK.get(), pos, state);
-        bookSettingsPOJO = new MirageProjectorBook();
+        setBookSettingsPOJO(new MirageProjectorBook());
     }
     public MirageBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
-        bookSettingsPOJO = new MirageProjectorBook();
     }
 
+
     public void setActiveLow(boolean activeLow) {
-        this.bookSettingsPOJO.setActiveLow(activeLow);
+        getBookSettingsPOJO().setActiveLow(activeLow);
         markDirty();
     }
     public void setMove(Vec3i move) {
-        this.bookSettingsPOJO.setMove(move);
+        getBookSettingsPOJO().setMove(move);
         markDirty();
     }
     public void setRotate(String rotate) {
-        this.bookSettingsPOJO.setRotate(Integer.parseInt(rotate));
+        getBookSettingsPOJO().setRotate(Integer.parseInt(rotate));
         markDirty();
     }
     public void setMirror(String mirror) {
-        this.bookSettingsPOJO.setMirror(mirror);
+        getBookSettingsPOJO().setMirror(mirror);
         markDirty();
     }
-    public void setFileName(String fileName) {
-        this.bookSettingsPOJO.setFile(fileName);
-        markDirty();
-    }
+
     public boolean isActiveLow() {
-        return this.bookSettingsPOJO.isActiveLow();
+        return getBookSettingsPOJO().isActiveLow();
     }
     public Vec3i getMove() {
-        return this.bookSettingsPOJO.getMoveVec3i();
+        return getBookSettingsPOJO().getMoveVec3i();
     }
     public int getRotate() {
-        return this.bookSettingsPOJO.getRotate();
+        return getBookSettingsPOJO().getRotate();
     }
     public String getMirror() {
-        return this.bookSettingsPOJO.getMirror();
+        return getBookSettingsPOJO().getMirror();
     }
-    public String getFileName() {
-        return this.bookSettingsPOJO.getFile();
+    public List<String> getFileNames() {
+        return getBookSettingsPOJO().getFiles();
+    }
+    private List<MirageWorld> mirageWorlds;
+
+    public void resetMirageWorlds(){
+        mirageWorlds.clear();
+    }
+    public void resetMirageWorlds(World world, int count){
+        resetMirageWorlds();
+        for(int i =0;i<count;++i){
+            mirageWorlds.add(new MirageWorld(world));
+        }
+    }public void addMirageWorld(){
+        mirageWorlds.add(new MirageWorld(world));
     }
 
-    private MirageWorld mirageWorld;
-
-    public void loadScheme() throws Exception{
+    public void loadMirage() throws Exception{
+        String fileName = "";
         try {
-            loadScheme(getBuildingNbt(getFileName()));
+            List<String> files = getFileNames();
+            int fileCount = files.size();
+            resetMirageWorlds(world,fileCount);
+
+            List<Frame> frames = getBookSettingsPOJO().getFrames();
+
+            for(int i=0;i<fileCount;++i){
+                fileName = files.get(i);
+                NbtCompound buildingNBT = getBuildingNbt(fileName);
+                MirageWorld mirageWorld = this.mirageWorlds.get(i);
+                Vec3i actualMove = getMove();
+                int actualRotate = getRotate();
+                String actualMirror = getMirror();
+
+                Frame frame;
+                try {
+                    frame = frames.get(i);
+                }catch (Exception e){
+                    loadMirage(mirageWorld,buildingNBT,actualMove,actualRotate,actualMirror);
+                    continue;
+                }
+
+                String mainMirror = getMirror();
+                String subMirror = frame.getMirror();
+
+                actualMove = actualMove.add(frame.getMoveVec3i());
+                actualRotate += frame.getRotate();
+
+
+                if(mainMirror.equals(subMirror)){
+                    actualMirror = "NONE";
+                }else if(mainMirror.equals("NONE")){
+                    actualMirror = subMirror;
+                }else if(subMirror.equals("NONE")){
+                    actualMirror = mainMirror;
+                }else {
+                    actualMirror = "NONE";
+                    actualRotate += 180;
+                }
+
+                actualRotate %= 360;
+                loadMirage(mirageWorld,buildingNBT,actualMove,actualRotate,actualMirror);
+            }
         }catch (Exception e) {
-            throw new Exception("Couldn't read nbt file: "+getFileName(),e);
+            throw new Exception("Couldn't read nbt file: "+fileName,e);
         }
     }
-    public void loadScheme(NbtCompound nbt) {//add BlockRotation, BlockMirror and PosOffset arguments
+    public void loadMirage(MirageWorld mirageWorld, NbtCompound nbt, Vec3i move, int rotate, String mirror) {
         if(!world.isClient()) {
             return;
         }
         if(nbt == null){
             return;
         }
-        BlockPos pos = getPos().add(getMove());
+        BlockPos pos = getPos().add(move);
         MirageStructure fakeStructure = new MirageStructure();
         fakeStructure.readNbt(nbt);
 
         StructurePlacementData structurePlacementData = new StructurePlacementData();
         structurePlacementData.setIgnoreEntities(false);
 
-        structurePlacementData.setRotation(StructureStates.ROTATION_STATES.get(getRotate()));
-        structurePlacementData.setMirror(StructureStates.MIRROR_STATES.get(getMirror()));
+        structurePlacementData.setRotation(StructureStates.ROTATION_STATES.get(rotate));
+        structurePlacementData.setMirror(StructureStates.MIRROR_STATES.get(mirror));
 
         mirageWorld.clearMirageWorld();
         fakeStructure.place(mirageWorld,pos,pos,structurePlacementData,mirageWorld.random,Block.NOTIFY_ALL);
@@ -110,14 +163,9 @@ public class MirageBlockEntity extends BlockEntity {
     @Override
     public void setWorld(World world) {
         super.setWorld(world);
-        setMirageWorld(world);
+        this.mirageWorlds = new ArrayList<>();
     }
 
-    public void setMirageWorld(World world) {
-        if(world.isClient()){
-            mirageWorld = new MirageWorld(world);
-        }
-    }
 
     public static NbtCompound getBuildingNbt(String structureName) throws Exception{
         File nbtFile = getBuildingNbtFile(structureName);
@@ -142,39 +190,54 @@ public class MirageBlockEntity extends BlockEntity {
         throw new Exception("Couldn't find: "+nbtFile.getName()+"\nin schematics folder: "+Mirage.SCHEMATICS_FOLDER.getFileName());
     }
     public void startMirage() throws Exception{
-        validateNBTFile(getFileName());
+        validateNBTFiles(getFileNames());
         markDirty();//load schematic to mirageWorld in "readNBT(...)"
     }
 
-    public void validateNBTFile(String fileName) throws Exception{
+    public void validateNBTFiles(List<String> fileNames) throws Exception{
         try{
-            if(fileName.isEmpty()){
-                throw new Exception("Blank File Name");
+            for(String fileName : fileNames){
+                if(fileName.isEmpty()){
+                    throw new Exception("Blank File Name");
+                }
+                getBuildingNbtFile(fileName);
             }
-            getBuildingNbtFile(fileName);
         }catch (Exception e){
             throw new Exception(e.getMessage(),e);
         }
     }
 
 
-    public MirageWorld getMirageWorld() {
-        return mirageWorld;
+    public List<MirageWorld> getMirageWorlds() {
+        return mirageWorlds;
     }
 
     public MirageProjectorBook bookSettingsPOJO;
 
     public MirageProjectorBook getBookSettingsPOJO() {
-        return bookSettingsPOJO;
+        return this.bookSettingsPOJO;
     }
 
     public void setBookSettingsPOJO(MirageProjectorBook bookSettingsPOJO) {
         this.bookSettingsPOJO = bookSettingsPOJO;
     }
 
+    public String serializeBook() throws Exception{
+        return new Gson().toJson(getBookSettingsPOJO());
+    }
+
+    public void deserializeBook(String bookString) throws Exception{
+        setBookSettingsPOJO(bookString.isEmpty() ? new MirageProjectorBook() : new Gson().fromJson(bookString, MirageProjectorBook.class));
+    }
+
     @Override
     protected void writeNbt(NbtCompound nbt) {
-        nbt.putString("bookJSON",new Gson().toJson(this.bookSettingsPOJO));
+        try {
+            nbt.putString("bookJSON",serializeBook());
+            nbt.putInt("mirageWorldIndex",getMirageWorldIndex());
+        } catch (Exception e) {
+            Mirage.LOGGER.error("Error on writeNBT: ",e);
+        }
         super.writeNbt(nbt);
     }
 
@@ -182,13 +245,11 @@ public class MirageBlockEntity extends BlockEntity {
     public void readNbt(NbtCompound nbt) {
         super.readNbt(nbt);
         try{
-            String bookString = nbt.getString("bookJSON");
-            this.bookSettingsPOJO = bookString.isEmpty() ? new MirageProjectorBook() : new Gson().fromJson(bookString, MirageProjectorBook.class);
-            if(this.mirageWorld != null) {
-                loadScheme();
-            }
+            deserializeBook(nbt.getString("bookJSON"));
+            this.mirageWorldIndex = nbt.getInt("mirageWorldIndex");
+            loadMirage();
         }catch (Exception e){
-            Mirage.LOGGER.error("[MIRAGE MOD]: Error on readNBT: ",e);
+            Mirage.LOGGER.error("Error on readNBT: ",e);
         }
     }
 
@@ -222,11 +283,25 @@ public class MirageBlockEntity extends BlockEntity {
         return active;
     }
 
-    public static void tick(World world, BlockPos pos, BlockState state, MirageBlockEntity entity) {
-        if(entity.isPowered()) {
-            MirageWorld mirageWorld = entity.mirageWorld;
+    public int mirageWorldIndex = 0;
+
+    public int getMirageWorldIndex() {
+        return mirageWorldIndex;
+    }
+
+    public void setMirageWorldIndex(int mirageWorldIndex) {
+        this.mirageWorldIndex = mirageWorldIndex % getMirageWorlds().size();
+        markDirty();
+    }
+
+    public static void tick(World world, BlockPos pos, BlockState state, MirageBlockEntity blockEntity) {
+        if(blockEntity.isPowered()) {
+            if(blockEntity.getMirageWorlds().isEmpty()) {
+                return;
+            }
+            MirageWorld mirageWorld = blockEntity.getMirageWorlds().get(blockEntity.getMirageWorldIndex());
             if (mirageWorld != null) {
-                entity.mirageWorld.tick();
+                mirageWorld.tick();
             }
         }
     }

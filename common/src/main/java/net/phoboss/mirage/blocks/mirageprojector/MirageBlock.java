@@ -56,7 +56,7 @@ public class MirageBlock extends BlockWithEntity implements BlockEntityProvider,
                         return ActionResult.SUCCESS;
                     } else if (mainHandItemStack.hasNbt() && mainHandItemStack.getNbt().contains("pages")) {
                         try {
-                            executeBookProtocol(mainHandItemStack, blockEntity, blockEntity.bookSettingsPOJO);
+                            executeBookProtocol(mainHandItemStack, blockEntity, blockEntity.getBookSettingsPOJO());
                             loadMirage(blockEntity);
                             return ActionResult.SUCCESS;
                         }catch (Exception e){
@@ -74,7 +74,7 @@ public class MirageBlock extends BlockWithEntity implements BlockEntityProvider,
     @Override
     public void implementBookSettings(BlockEntity blockEntity, JsonObject newSettings) throws Exception{
         if(blockEntity instanceof MirageBlockEntity mirageBlockEntity){
-            MirageProjectorBook newBook = MirageProjectorBook.validateNewBookSettings(newSettings);
+            MirageProjectorBook newBook = (MirageProjectorBook) mirageBlockEntity.getBookSettingsPOJO().validateNewBookSettings(newSettings);
             mirageBlockEntity.setBookSettingsPOJO(newBook);
         }
     }

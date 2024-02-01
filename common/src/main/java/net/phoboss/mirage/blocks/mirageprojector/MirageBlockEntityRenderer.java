@@ -16,7 +16,10 @@ public class MirageBlockEntityRenderer implements BlockEntityRenderer<MirageBloc
     public void render(MirageBlockEntity blockEntity, float tickDelta, MatrixStack matrices,
                        VertexConsumerProvider vertexConsumers, int light, int overlay) {
         if(blockEntity.isPowered()) {
-            MirageWorld mirageWorld = blockEntity.getMirageWorld();
+            if(blockEntity.getMirageWorlds().isEmpty()) {
+                return;
+            }
+            MirageWorld mirageWorld = blockEntity.getMirageWorlds().get(blockEntity.getMirageWorldIndex());
             if (mirageWorld != null) {
                 BlockPos projectorPos = blockEntity.getPos();
                 mirageWorld.render(projectorPos, tickDelta, matrices, vertexConsumers, light, overlay);

@@ -3,21 +3,67 @@ package net.phoboss.mirage.blocks.mirageprojector;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.annotations.SerializedName;
 import net.minecraft.util.math.Vec3i;
 import net.phoboss.mirage.client.rendering.customworld.StructureStates;
 import net.phoboss.mirage.utility.Book;
 
-//this class is used to handle Book&Quill interface
+import java.util.ArrayList;
+import java.util.List;
+
+//this class is used to hold Book&Quill settings
 public class MirageProjectorBook implements Book {
-    @SerializedName("type")
-    private String typeName = getClass().getName();
     int[] move = {0,0,0};
     String mirror = "NONE";
     int rotate = 0;
     boolean activeLow = false;
-    String file = "";
+    boolean loop = true;
+    boolean autoPlay = true;
+    float speed = 20f;
+    List<String> files = new ArrayList<>();
+    List<Frame> frames = new ArrayList<>();
 
+
+
+
+    public List<String> getFiles() {
+        return files;
+    }
+
+    public void setFiles(List<String> files) {
+        this.files = files;
+    }
+
+    public boolean isLoop() {
+        return loop;
+    }
+
+    public void setLoop(boolean loop) {
+        this.loop = loop;
+    }
+
+    public boolean isAutoPlay() {
+        return autoPlay;
+    }
+
+    public void setAutoPlay(boolean autoPlay) {
+        this.autoPlay = autoPlay;
+    }
+
+    public float getSpeed() {
+        return speed;
+    }
+
+    public void setSpeed(float speed) {
+        this.speed = speed;
+    }
+
+    public List<Frame> getFrames() {
+        return frames;
+    }
+
+    public void setFrames(List<Frame> frames) {
+        this.frames = frames;
+    }
 
     public int[] getMove() {
         return move;
@@ -57,16 +103,8 @@ public class MirageProjectorBook implements Book {
         this.activeLow = activeLow;
     }
 
-    public String getFile() {
-        return file;
-    }
-
-    public void setFile(String file) {
-        this.file = file;
-    }
-
-
-    public static MirageProjectorBook validateNewBookSettings(JsonObject newSettings) throws Exception {
+    @Override
+    public Book validateNewBookSettings(JsonObject newSettings) throws Exception {
         JsonArray moveArray = newSettings.get("move").getAsJsonArray();
         if(moveArray.size()>3){
             throw new Exception("Invalid Move Value: "+ newSettings.get("move"));
@@ -90,4 +128,6 @@ public class MirageProjectorBook implements Book {
 
         return newBook;
     }
+
+
 }
