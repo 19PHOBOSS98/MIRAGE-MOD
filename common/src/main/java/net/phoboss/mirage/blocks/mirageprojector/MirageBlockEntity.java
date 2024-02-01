@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 
@@ -71,26 +72,33 @@ public class MirageBlockEntity extends BlockEntity {
     }
     private List<MirageWorld> mirageWorlds;
 
-    public void resetMirageWorlds(){
-        mirageWorlds.clear();
+    public void resetMirageWorlds() {
+        if(mirageWorlds != null){
+            mirageWorlds.clear();
+        }
     }
     public void resetMirageWorlds(World world, int count){
         resetMirageWorlds();
-        for(int i =0;i<count;++i){
-            mirageWorlds.add(new MirageWorld(world));
+        if(mirageWorlds != null) {
+            for (int i = 0; i < count; ++i) {
+                mirageWorlds.add(new MirageWorld(world));
+            }
         }
     }public void addMirageWorld(){
         mirageWorlds.add(new MirageWorld(world));
     }
 
     public void loadMirage() throws Exception{
+        if(this.mirageWorlds == null){
+            return;
+        }
         String fileName = "";
         try {
             List<String> files = getFileNames();
             int fileCount = files.size();
             resetMirageWorlds(world,fileCount);
 
-            List<Frame> frames = getBookSettingsPOJO().getFrames();
+            HashMap<Integer,Frame> frames = getBookSettingsPOJO().getFrames();
 
             for(int i=0;i<fileCount;++i){
                 fileName = files.get(i);
@@ -101,9 +109,9 @@ public class MirageBlockEntity extends BlockEntity {
                 String actualMirror = getMirror();
 
                 Frame frame;
-                try {
+                if(frames.containsKey(i)){
                     frame = frames.get(i);
-                }catch (Exception e){
+                }else{
                     loadMirage(mirageWorld,buildingNBT,actualMove,actualRotate,actualMirror);
                     continue;
                 }
@@ -286,24 +294,39 @@ public class MirageBlockEntity extends BlockEntity {
     public int mirageWorldIndex = 0;
 
     public int getMirageWorldIndex() {
-        return mirageWorldIndex;
+        return this.mirageWorldIndex;
     }
 
     public void setMirageWorldIndex(int mirageWorldIndex) {
-        this.mirageWorldIndex = mirageWorldIndex % getMirageWorlds().size();
+        if(getBookSettingsPOJO().isLoop()){
+            this.mirageWorldIndex = Math.abs(mirageWorldIndex % getMirageWorlds().size());
+        }else{
+            this.mirageWorldIndex = Math.abs(Math.max(0,Math.min(mirageWorldIndex,getMirageWorlds().size()-1)));
+        }
         markDirty();
     }
+    public long previousTime = System.currentTimeMillis();
+
+    public void incrementMirageWorldIndex(){
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - this.previousTime >= getBookSettingsPOJO().getDelay()*1000) {
+
+            int index = getMirageWorldIndex() + 1;
+
+            setMirageWorldIndex(index);
+            this.previousTime = currentTime;
+        }
+    }
+
 
     public static void tick(World world, BlockPos pos, BlockState state, MirageBlockEntity blockEntity) {
+
         if(blockEntity.isPowered()) {
-            if(blockEntity.getMirageWorlds().isEmpty()) {
-                return;
-            }
-            MirageWorld mirageWorld = blockEntity.getMirageWorlds().get(blockEntity.getMirageWorldIndex());
-            if (mirageWorld != null) {
+            blockEntity.getMirageWorlds().forEach((mirageWorld)->{
                 mirageWorld.tick();
-            }
+            });
         }
+
     }
 
 }

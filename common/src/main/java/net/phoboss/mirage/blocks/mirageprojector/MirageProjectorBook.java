@@ -8,6 +8,7 @@ import net.phoboss.mirage.client.rendering.customworld.StructureStates;
 import net.phoboss.mirage.utility.Book;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 //this class is used to hold Book&Quill settings
@@ -17,13 +18,29 @@ public class MirageProjectorBook implements Book {
     int rotate = 0;
     boolean activeLow = false;
     boolean loop = true;
-    boolean autoPlay = true;
-    float speed = 20f;
+    boolean autoPlay = false;
+    boolean reverse = false;
+    float delay = 2f;
     List<String> files = new ArrayList<>();
-    List<Frame> frames = new ArrayList<>();
+    HashMap<Integer,Frame> frames = new HashMap<>();
 
+    int index = 0;
 
+    public boolean isReverse() {
+        return reverse;
+    }
 
+    public void setReverse(boolean reverse) {
+        this.reverse = reverse;
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
+    public void setIndex(int index) {
+        this.index = index;
+    }
 
     public List<String> getFiles() {
         return files;
@@ -49,19 +66,19 @@ public class MirageProjectorBook implements Book {
         this.autoPlay = autoPlay;
     }
 
-    public float getSpeed() {
-        return speed;
+    public float getDelay() {
+        return delay;
     }
 
-    public void setSpeed(float speed) {
-        this.speed = speed;
+    public void setDelay(float delay) {
+        this.delay = delay;
     }
 
-    public List<Frame> getFrames() {
+    public HashMap<Integer,Frame> getFrames() {
         return frames;
     }
 
-    public void setFrames(List<Frame> frames) {
+    public void setFrames(HashMap<Integer,Frame> frames) {
         this.frames = frames;
     }
 
@@ -124,6 +141,9 @@ public class MirageProjectorBook implements Book {
         }
         if(!StructureStates.MIRROR_STATES_KEYS.contains(newBook.getMirror())){
             throw new Exception("Invalid Mirror Value: "+ newBook.getMirror() +"\nSupported Values: NONE,FRONT_BACK,LEFT_RIGHT");
+        }
+        if(newBook.getIndex()<0){
+            throw new Exception("Invalid Index Value: "+ newBook.getIndex());
         }
 
         return newBook;

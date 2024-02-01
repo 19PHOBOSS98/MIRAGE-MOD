@@ -43,6 +43,12 @@ public interface BookSettingsUtility {
 
     static JsonObject validateNewSettings(JsonObject settingsJSON,Book book) throws Exception{
 
+        /*
+        MirageProjectorBook testBook = new MirageProjectorBook();
+        testBook.getFrames().put(1,new Frame());
+        JsonObject testJSON = new Gson().toJsonTree(testBook).getAsJsonObject();
+*/
+
         JsonObject bookJSON = new Gson().toJsonTree(book).getAsJsonObject();
 
         for (Map.Entry<String, JsonElement> setting : settingsJSON.entrySet()) {
