@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.network.Packet;
@@ -29,7 +30,10 @@ public class MirageBlockEntity extends BlockEntity {
         super(ModBlockEntities.MIRAGE_BLOCK.get(), pos, state);
         bookSettingsPOJO = new MirageProjectorBook();
     }
-
+    public MirageBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        super(type, pos, state);
+        bookSettingsPOJO = new MirageProjectorBook();
+    }
 
     public void setActiveLow(boolean activeLow) {
         this.bookSettingsPOJO.setActiveLow(activeLow);

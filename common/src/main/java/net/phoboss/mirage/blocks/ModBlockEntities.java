@@ -6,8 +6,7 @@ import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.util.registry.Registry;
 import net.phoboss.mirage.Mirage;
 import net.phoboss.mirage.blocks.mirageprojector.MirageBlockEntity;
-
-
+import net.phoboss.mirage.blocks.miragezoetrope.MirageZoetropeBlockEntity;
 
 import java.util.function.Supplier;
 
@@ -19,6 +18,12 @@ public class ModBlockEntities {
             () ->   BlockEntityType.Builder.create(
                     MirageBlockEntity::new,
                     ModBlocks.MIRAGE_BLOCK.get()
+            ).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<MirageZoetropeBlockEntity>> MIRAGE_ZOETROPE_BLOCK = registerBlockEntities("mirage_zoetrope_block",
+            () ->   BlockEntityType.Builder.create(
+                    MirageZoetropeBlockEntity::new,
+                    ModBlocks.MIRAGE_ZOETROPE_BLOCK.get()
             ).build(null));
 
     public static <T extends BlockEntityType> RegistrySupplier<T> registerBlockEntities(String name, Supplier<T> block){

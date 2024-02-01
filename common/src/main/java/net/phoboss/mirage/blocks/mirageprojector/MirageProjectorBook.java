@@ -3,19 +3,19 @@ package net.phoboss.mirage.blocks.mirageprojector;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.annotations.SerializedName;
 import net.minecraft.util.math.Vec3i;
 import net.phoboss.mirage.client.rendering.customworld.StructureStates;
 import net.phoboss.mirage.utility.Book;
 
 //this class is used to handle Book&Quill interface
-public class MirageProjectorBook extends Book {
+public class MirageProjectorBook implements Book {
+    @SerializedName("type")
+    private String typeName = getClass().getName();
     int[] move = {0,0,0};
     String mirror = "NONE";
     int rotate = 0;
     boolean activeLow = false;
-    boolean loop = true;
-    float speed = 10f;
-    boolean autoPlay = false;
     String file = "";
 
 
@@ -55,30 +55,6 @@ public class MirageProjectorBook extends Book {
 
     public void setActiveLow(boolean activeLow) {
         this.activeLow = activeLow;
-    }
-
-    public boolean isLoop() {
-        return loop;
-    }
-
-    public void setLoop(boolean loop) {
-        this.loop = loop;
-    }
-
-    public float getSpeed() {
-        return speed;
-    }
-
-    public void setSpeed(float speed) {
-        this.speed = speed;
-    }
-
-    public boolean isAutoPlay() {
-        return autoPlay;
-    }
-
-    public void setAutoPlay(boolean autoPlay) {
-        this.autoPlay = autoPlay;
     }
 
     public String getFile() {

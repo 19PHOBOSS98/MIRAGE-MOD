@@ -1,14 +1,8 @@
 {
   "block.mirage.mirage_block": "Mirage Projector",
+  "block.mirage.mirage_zoetrope_block": "Mirage Zoetrope",
 
   "itemGroup.mirage.mirage": "MIRAGE",
 
-  "block.mirage.notghost.tooltip": "Beam stops at solid blocks",
-
-  "block.mirage.ghost.tooltip": "Beam passes thru solid blocks (Press §eSHIFT§r)",
-  "block.mirage.ghost.tooltip.shift": "you can also pass thru it as well!",
-
-  "block.mirage.omni_beacon.tooltip": "redirect beam (Press §eSHIFT§r)",
-  "block.mirage.omni_beacon.tooltip.shift": "right click with torch",
   "invalid_page_entry": "might need to check on what you wrote..."
 }

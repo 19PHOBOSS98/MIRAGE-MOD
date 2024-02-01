@@ -18,6 +18,7 @@ import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import net.phoboss.mirage.Mirage;
 import net.phoboss.mirage.blocks.mirageprojector.MirageBlock;
+import net.phoboss.mirage.blocks.miragezoetrope.MirageZoetropeBlock;
 import net.phoboss.mirage.items.ModItemGroups;
 import net.phoboss.mirage.items.ModItems;
 import org.jetbrains.annotations.Nullable;
@@ -41,6 +42,14 @@ public class ModBlocks {
                     //.setTooltipShiftKey("block.mirage.omni_beacon.tooltip.shift")
     );
 
+    public static final RegistrySupplier<Block> MIRAGE_ZOETROPE_BLOCK = ModBlocks.registerBlock(
+            "mirage_zoetrope_block",
+            () -> new MirageZoetropeBlock(AbstractBlock
+                    .Settings.of(Material.GLASS, MapColor.DIAMOND_BLUE)
+                    .nonOpaque()
+                    .noCollision()),
+            ModItemGroups.MIRAGE
+    );
 
 
     public static <T extends Block> RegistrySupplier<T> registerBlock(String name, Supplier<T> block, ItemGroup group){
