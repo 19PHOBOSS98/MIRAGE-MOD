@@ -16,22 +16,32 @@ public class MirageBlockEntityRenderer implements BlockEntityRenderer<MirageBloc
 
     @Override
     public void render(MirageBlockEntity blockEntity, float tickDelta, MatrixStack matrices,VertexConsumerProvider vertexConsumers, int light, int overlay) {
+        boolean areSidesPowered = blockEntity.areSidesPowered();
         if(blockEntity.isPowered()) {
             List<MirageWorld> mirageWorldList = blockEntity.getMirageWorlds();
             if(mirageWorldList.isEmpty()) {
                 return;
             }
-
             MirageProjectorBook mirageProjectorBook = blockEntity.getBookSettingsPOJO();
+            int mirageWorldIndex = blockEntity.getMirageWorldIndex();
+            int bookStep = mirageProjectorBook.getStep();
+
             if(mirageProjectorBook.isAutoPlay()) {
-                blockEntity.incrementMirageWorldIndex();
+                if(!areSidesPowered) {
+                    blockEntity.incrementMirageWorldIndex();
+                }
             }else{
-                blockEntity.setMirageWorldIndex(mirageProjectorBook.getIndex());
+                if(areSidesPowered && !blockEntity.wereSidesPowered()){
+                    blockEntity.incrementBookStep();
+                }
+                if(bookStep != mirageWorldIndex) {
+                    blockEntity.setMirageWorldIndex(bookStep);
+                }
             }
 
-            int index = blockEntity.getMirageWorldIndex();
+            int index = mirageWorldIndex;
 
-            if(mirageProjectorBook.isReverse()){
+            if(mirageProjectorBook.isReverse()) {
                 index = mirageWorldList.size()-1 - index;
             }
 
@@ -43,7 +53,7 @@ public class MirageBlockEntityRenderer implements BlockEntityRenderer<MirageBloc
                 mirageWorld.render(projectorPos, tickDelta, matrices, vertexConsumers, light, overlay);
             }
         }
-
+        blockEntity.savePreviousSidePowerState(areSidesPowered);
     }
 
     @Override

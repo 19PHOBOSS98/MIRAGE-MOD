@@ -20,6 +20,7 @@ import net.phoboss.mirage.blocks.ModBlockEntities;
 import net.phoboss.mirage.client.rendering.customworld.MirageStructure;
 import net.phoboss.mirage.client.rendering.customworld.MirageWorld;
 import net.phoboss.mirage.client.rendering.customworld.StructureStates;
+import net.phoboss.mirage.utility.RedstoneStateChecker;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -283,12 +284,47 @@ public class MirageBlockEntity extends BlockEntity {
     public boolean isPowered() {
         boolean active = false;
         try {
-            active = getWorld().getEmittedRedstonePower(getPos().down(), Direction.DOWN)>0;
+            active = getWorld().getEmittedRedstonePower(getPos().down(), Direction.DOWN)+getWorld().getEmittedRedstonePower(getPos().up(), Direction.UP)>0;
             active = isActiveLow() != active;
         }catch(Exception e){
             Mirage.LOGGER.error("Error on isPowered() method: ",e);
         }
         return active;
+    }
+
+
+    public boolean areSidesPowered() {
+        boolean active = false;
+        try {
+            int currentSideRedstoneState =  getWorld().getEmittedRedstonePower(getPos().north(), Direction.NORTH)+
+                                            getWorld().getEmittedRedstonePower(getPos().south(), Direction.SOUTH)+
+                                            getWorld().getEmittedRedstonePower(getPos().east(), Direction.EAST)+
+                                            getWorld().getEmittedRedstonePower(getPos().west(), Direction.WEST);
+            active = currentSideRedstoneState>0;
+        }catch(Exception e){
+            Mirage.LOGGER.error("Error on isPowered() method: ",e);
+        }
+        return active;
+    }
+
+    public RedstoneStateChecker sideRedstoneStateChecker = new RedstoneStateChecker();
+    public boolean wereSidesPowered() {
+        return sideRedstoneStateChecker.getPreviousState();
+    }
+    public void savePreviousSidePowerState(Boolean currentState) {
+        sideRedstoneStateChecker.setPreviousState(currentState);
+    }
+    public boolean isAutoPlay(){
+        return getBookSettingsPOJO().isAutoPlay();
+    }
+    public void setAutoPlay(boolean autoPlay){
+        getBookSettingsPOJO().setAutoPlay(autoPlay);
+        markDirty();
+    }
+
+    public void incrementBookStep(){
+        getBookSettingsPOJO().setStep(getBookSettingsPOJO().getStep()+1);
+        markDirty();
     }
 
     public int mirageWorldIndex = 0;

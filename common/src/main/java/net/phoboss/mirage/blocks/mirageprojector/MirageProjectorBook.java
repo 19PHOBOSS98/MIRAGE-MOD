@@ -16,15 +16,19 @@ public class MirageProjectorBook implements Book {
     int[] move = {0,0,0};
     String mirror = "NONE";
     int rotate = 0;
-    boolean activeLow = false;
+    boolean activeLow = false;// toggle by tapping with redstone torch
     boolean loop = true;
-    boolean autoPlay = false;
+    boolean autoPlay = false;// toggle by tapping with soul torch
     boolean reverse = false;
     float delay = 2f;
     List<String> files = new ArrayList<>();
     HashMap<Integer,Frame> frames = new HashMap<>();
 
-    int index = 0;
+    /*
+    if(isAutoPlay) pause/play: 1/0
+    else increment when rising-edge redstone signal is on side
+     */
+    int step = 0;
 
     public boolean isReverse() {
         return reverse;
@@ -34,12 +38,12 @@ public class MirageProjectorBook implements Book {
         this.reverse = reverse;
     }
 
-    public int getIndex() {
-        return index;
+    public int getStep() {
+        return step;
     }
 
-    public void setIndex(int index) {
-        this.index = index;
+    public void setStep(int step) {
+        this.step = step;
     }
 
     public List<String> getFiles() {
@@ -136,14 +140,16 @@ public class MirageProjectorBook implements Book {
 
         MirageProjectorBook newBook = new Gson().fromJson(newSettings, MirageProjectorBook.class);
 
+
+
         if(!StructureStates.ROTATION_STATES_KEYS.contains(newBook.getRotate())){
             throw new Exception("Invalid Rotation Value: "+ newBook.getRotate() +"\nSupported Values: 0,90,180,270");
         }
         if(!StructureStates.MIRROR_STATES_KEYS.contains(newBook.getMirror())){
             throw new Exception("Invalid Mirror Value: "+ newBook.getMirror() +"\nSupported Values: NONE,FRONT_BACK,LEFT_RIGHT");
         }
-        if(newBook.getIndex()<0){
-            throw new Exception("Invalid Index Value: "+ newBook.getIndex());
+        if(newBook.getStep()<0){
+            throw new Exception("Invalid Index Value: "+ newBook.getStep());
         }
 
         return newBook;

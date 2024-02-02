@@ -54,9 +54,12 @@ public class MirageBlock extends BlockWithEntity implements BlockEntityProvider,
                     if (mainHandItem == Items.REDSTONE_TORCH) {
                         blockEntity.setActiveLow(!blockEntity.isActiveLow());
                         return ActionResult.SUCCESS;
+                    } else if (mainHandItem == Items.SOUL_TORCH) {
+                        blockEntity.setAutoPlay(!blockEntity.isAutoPlay());
+                        return ActionResult.SUCCESS;
                     } else if (mainHandItemStack.hasNbt() && mainHandItemStack.getNbt().contains("pages")) {
                         try {
-                            executeBookProtocol(mainHandItemStack, blockEntity, blockEntity.getBookSettingsPOJO());
+                            executeBookProtocol(mainHandItemStack, blockEntity, blockEntity.getBookSettingsPOJO(), player.isCreative());
                             loadMirage(blockEntity);
                             return ActionResult.SUCCESS;
                         }catch (Exception e){
@@ -72,7 +75,17 @@ public class MirageBlock extends BlockWithEntity implements BlockEntityProvider,
     }
 
     @Override
-    public void implementBookSettings(BlockEntity blockEntity, JsonObject newSettings) throws Exception{
+    public void customJSONParsingValidation(JsonObject settingsJSON,boolean override) throws Exception {
+        if(override){
+            return;
+        }
+        if(settingsJSON.has("autoPlay")){
+            throw new Exception("You have to use a soul torch to toggle autoPlay on ;)");
+        }
+    }
+
+    @Override
+    public void implementBookSettings(BlockEntity blockEntity, JsonObject newSettings,boolean override) throws Exception{
         if(blockEntity instanceof MirageBlockEntity mirageBlockEntity){
             MirageProjectorBook newBook = (MirageProjectorBook) mirageBlockEntity.getBookSettingsPOJO().validateNewBookSettings(newSettings);
             mirageBlockEntity.setBookSettingsPOJO(newBook);

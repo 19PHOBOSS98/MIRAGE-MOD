@@ -21,7 +21,7 @@ public interface BookSettingsUtility {
         }
         return new NbtList();
     }
-    static JsonObject parsePages(NbtList pagesNbt, Book bookSettings) throws Exception{
+    static JsonObject parsePages(NbtList pagesNbt) throws Exception{
         if(pagesNbt.size()<1){
             throw new Exception("The book is empty: ");
         }
@@ -31,24 +31,16 @@ public interface BookSettingsUtility {
         }
         pagesStr = pagesStr + "}";
 
-        JsonObject settingsJSON;
         try {
-            settingsJSON  = JsonParser.parseString(pagesStr).getAsJsonObject();
+            return JsonParser.parseString(pagesStr).getAsJsonObject();
         }catch (Exception e){
             throw new Exception("Might need to recheck your book: "+e.getLocalizedMessage(),e);
         }
-        return validateNewSettings(settingsJSON,bookSettings);
     }
 
 
-    static JsonObject validateNewSettings(JsonObject settingsJSON,Book book) throws Exception{
 
-        /*
-        MirageProjectorBook testBook = new MirageProjectorBook();
-        testBook.getFrames().put(1,new Frame());
-        JsonObject testJSON = new Gson().toJsonTree(testBook).getAsJsonObject();
-*/
-
+    static JsonObject createNewBook(JsonObject settingsJSON, Book book) throws Exception{
         JsonObject bookJSON = new Gson().toJsonTree(book).getAsJsonObject();
 
         for (Map.Entry<String, JsonElement> setting : settingsJSON.entrySet()) {
@@ -64,12 +56,11 @@ public interface BookSettingsUtility {
             bookJSON.add(settingName,newValue);
         }
         return bookJSON;
-        //book = new Gson().fromJson(bookJSON, MirageProjectorBook.class);
     }
 
     default void executeBookProtocol(ItemStack bookStack,
                                              BlockEntity blockEntity,
-                                             Book bookSettings) throws Exception{
+                                             Book bookSettings,boolean override) throws Exception{
         NbtList pagesNbt;
         try {
             pagesNbt = readPages(bookStack);
@@ -83,15 +74,18 @@ public interface BookSettingsUtility {
         }
 
         try {
-            JsonObject newSettings = parsePages(pagesNbt, bookSettings);
-            implementBookSettings(blockEntity,newSettings);
+            JsonObject newSettings = parsePages(pagesNbt);
+            customJSONParsingValidation(newSettings,override);
+            implementBookSettings(blockEntity,createNewBook(newSettings,bookSettings),override);
         }catch(Exception e){
             throw new Exception(e.getMessage(),e);
         }
     }
 
+    default void customJSONParsingValidation(JsonObject settingsJSON,boolean overide) throws Exception{
 
-    default void implementBookSettings(BlockEntity blockEntity, JsonObject newSettings) throws Exception{
+    }
+    default void implementBookSettings(BlockEntity blockEntity, JsonObject newSettings,boolean override) throws Exception{
     }
 
 }
