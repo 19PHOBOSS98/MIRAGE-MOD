@@ -16,44 +16,38 @@ public class MirageBlockEntityRenderer implements BlockEntityRenderer<MirageBloc
 
     @Override
     public void render(MirageBlockEntity blockEntity, float tickDelta, MatrixStack matrices,VertexConsumerProvider vertexConsumers, int light, int overlay) {
-        boolean areSidesPowered = blockEntity.areSidesPowered();
+
+        boolean isTopPowered = blockEntity.isTopPowered();
+        blockEntity.setReverse(blockEntity.areSidesPowered());
         if(blockEntity.isPowered()) {
             List<MirageWorld> mirageWorldList = blockEntity.getMirageWorlds();
             if(mirageWorldList.isEmpty()) {
                 return;
             }
             MirageProjectorBook mirageProjectorBook = blockEntity.getBookSettingsPOJO();
-            int mirageWorldIndex = blockEntity.getMirageWorldIndex();
-            int bookStep = mirageProjectorBook.getStep();
 
             if(mirageProjectorBook.isAutoPlay()) {
-                if(!areSidesPowered) {
-                    blockEntity.incrementMirageWorldIndex();
+                if(!isTopPowered) {
+                    blockEntity.nextMirageWorldIndex(mirageWorldList.size());
                 }
             }else{
-                if(areSidesPowered && !blockEntity.wereSidesPowered()){
-                    blockEntity.incrementBookStep();
+                if(isTopPowered && !blockEntity.wasTopPowered()){
+                    blockEntity.nextBookStep(mirageWorldList.size());
                 }
-                if(bookStep != mirageWorldIndex) {
-                    blockEntity.setMirageWorldIndex(bookStep);
-                }
+                //blockEntity.setMirageWorldIndex(Math.abs(Math.max(0,Math.min(mirageProjectorBook.getStep(),mirageWorldList.size()-1))));
+                blockEntity.setMirageWorldIndex(Math.abs(mirageProjectorBook.getStep()) % mirageWorldList.size());//better-ish clamping function for manual book step setting
             }
 
-            int index = mirageWorldIndex;
+            int mirageWorldIndex = blockEntity.getMirageWorldIndex();
 
-            if(mirageProjectorBook.isReverse()) {
-                index = mirageWorldList.size()-1 - index;
-            }
+            MirageWorld mirageWorld = mirageWorldList.get(mirageWorldIndex);
 
-            index = Math.abs(Math.max(0,Math.min(index,mirageWorldList.size()-1)));
-
-            MirageWorld mirageWorld = mirageWorldList.get(index);
             if (mirageWorld != null) {
                 BlockPos projectorPos = blockEntity.getPos();
                 mirageWorld.render(projectorPos, tickDelta, matrices, vertexConsumers, light, overlay);
             }
         }
-        blockEntity.savePreviousSidePowerState(areSidesPowered);
+        blockEntity.savePreviousTopPowerState(isTopPowered);
     }
 
     @Override

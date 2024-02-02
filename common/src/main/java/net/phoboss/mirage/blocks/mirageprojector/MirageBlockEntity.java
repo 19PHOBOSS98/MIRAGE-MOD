@@ -38,7 +38,6 @@ public class MirageBlockEntity extends BlockEntity {
         super(type, pos, state);
     }
 
-
     public void setActiveLow(boolean activeLow) {
         getBookSettingsPOJO().setActiveLow(activeLow);
         markDirty();
@@ -280,11 +279,27 @@ public class MirageBlockEntity extends BlockEntity {
         world.updateListeners(getPos(), getCachedState(), getCachedState(), Block.NOTIFY_ALL);
         super.markDirty();
     }
+    public boolean isReverse(){
+        return getBookSettingsPOJO().isReverse();
+    }
+    public void setReverse(boolean reverse){
+        getBookSettingsPOJO().setReverse(reverse);
+        markDirty();
+    }
+    public boolean isTopPowered() {
+        boolean active = false;
+        try {
+            active = getWorld().getEmittedRedstonePower(getPos().up(), Direction.UP)>0;
+        }catch(Exception e){
+            Mirage.LOGGER.error("Error on isTopPowered() method: ",e);
+        }
+        return active;
+    }
 
     public boolean isPowered() {
         boolean active = false;
         try {
-            active = getWorld().getEmittedRedstonePower(getPos().down(), Direction.DOWN)+getWorld().getEmittedRedstonePower(getPos().up(), Direction.UP)>0;
+            active = getWorld().getEmittedRedstonePower(getPos().down(), Direction.DOWN)>0;
             active = isActiveLow() != active;
         }catch(Exception e){
             Mirage.LOGGER.error("Error on isPowered() method: ",e);
@@ -302,17 +317,17 @@ public class MirageBlockEntity extends BlockEntity {
                                             getWorld().getEmittedRedstonePower(getPos().west(), Direction.WEST);
             active = currentSideRedstoneState>0;
         }catch(Exception e){
-            Mirage.LOGGER.error("Error on isPowered() method: ",e);
+            Mirage.LOGGER.error("Error on areSidesPowered() method: ",e);
         }
         return active;
     }
 
-    public RedstoneStateChecker sideRedstoneStateChecker = new RedstoneStateChecker();
-    public boolean wereSidesPowered() {
-        return sideRedstoneStateChecker.getPreviousState();
+    public RedstoneStateChecker topRedstoneStateChecker = new RedstoneStateChecker();
+    public boolean wasTopPowered() {
+        return topRedstoneStateChecker.getPreviousState();
     }
-    public void savePreviousSidePowerState(Boolean currentState) {
-        sideRedstoneStateChecker.setPreviousState(currentState);
+    public void savePreviousTopPowerState(Boolean currentState) {
+        topRedstoneStateChecker.setPreviousState(currentState);
     }
     public boolean isAutoPlay(){
         return getBookSettingsPOJO().isAutoPlay();
@@ -321,9 +336,28 @@ public class MirageBlockEntity extends BlockEntity {
         getBookSettingsPOJO().setAutoPlay(autoPlay);
         markDirty();
     }
+    public void setStep(int step){
+        getBookSettingsPOJO().setStep(step);
+        markDirty();
+    }
+    public void nextBookStep(int listSize){
+        int nextStep = getBookSettingsPOJO().getStep();
+        boolean reverse = getBookSettingsPOJO().isReverse();
+        nextStep = reverse ? nextStep - 1 : nextStep + 1;
 
-    public void incrementBookStep(){
-        getBookSettingsPOJO().setStep(getBookSettingsPOJO().getStep()+1);
+
+        if(getBookSettingsPOJO().isLoop()) {
+            /*if (getBookSettingsPOJO().isReverse()) {
+                nextStep = (nextStep + listSize) % listSize;
+            } else {
+                nextStep = (nextStep) % listSize;
+            }*/
+            nextStep = reverse ? nextStep + listSize : nextStep;
+            nextStep = (nextStep) % listSize;
+        }else{
+            nextStep = Math.abs(Math.max(0,Math.min(nextStep,getMirageWorlds().size()-1)));
+        }
+        setStep(nextStep);
         markDirty();
     }
 
@@ -333,21 +367,31 @@ public class MirageBlockEntity extends BlockEntity {
         return this.mirageWorldIndex;
     }
 
-    public void setMirageWorldIndex(int mirageWorldIndex) {
-        if(getBookSettingsPOJO().isLoop()){
-            this.mirageWorldIndex = Math.abs(mirageWorldIndex % getMirageWorlds().size());
-        }else{
-            this.mirageWorldIndex = Math.abs(Math.max(0,Math.min(mirageWorldIndex,getMirageWorlds().size()-1)));
-        }
+    public void setMirageWorldIndex(int newMirageWorldIndex) {
+        this.mirageWorldIndex = newMirageWorldIndex;
         markDirty();
     }
     public long previousTime = System.currentTimeMillis();
 
-    public void incrementMirageWorldIndex(){
+    public void nextMirageWorldIndex(int listSize){
         long currentTime = System.currentTimeMillis();
         if (currentTime - this.previousTime >= getBookSettingsPOJO().getDelay()*1000) {
+            int index = getMirageWorldIndex();
+            boolean reverse = getBookSettingsPOJO().isReverse();
+            index = reverse ? index - 1 : index + 1;
 
-            int index = getMirageWorldIndex() + 1;
+
+            if(getBookSettingsPOJO().isLoop()) {
+            /*if (getBookSettingsPOJO().isReverse()) {
+                nextStep = (nextStep + listSize) % listSize;
+            } else {
+                nextStep = (nextStep) % listSize;
+            }*/
+                index = reverse ? index + listSize : index;
+                index = (index) % listSize;
+            }else{
+                index = Math.abs(Math.max(0,Math.min(index,getMirageWorlds().size()-1)));
+            }
 
             setMirageWorldIndex(index);
             this.previousTime = currentTime;
