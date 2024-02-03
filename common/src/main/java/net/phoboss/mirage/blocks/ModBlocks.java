@@ -12,6 +12,7 @@ import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
+import net.minecraft.state.property.Properties;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.registry.Registry;
@@ -33,7 +34,8 @@ public class ModBlocks {
             () -> new MirageBlock(AbstractBlock
                     .Settings.of(Material.GLASS, MapColor.DIAMOND_BLUE)
                     .nonOpaque()
-                    .noCollision()),
+                    .noCollision()
+                    .luminance((state) -> state.get(Properties.LIT) ? 15 : 0)),
             ModItemGroups.MIRAGE
             //new ModBlocks.ExtraItemSettings()
                     //.setStackLimit(1)

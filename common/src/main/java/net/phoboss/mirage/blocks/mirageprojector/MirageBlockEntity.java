@@ -10,6 +10,7 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.network.Packet;
 import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
+import net.minecraft.state.property.Properties;
 import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -406,7 +407,9 @@ public class MirageBlockEntity extends BlockEntity {
                 mirageWorld.tick();
             });
         }
+        if(!world.isClient()){// note to self only update state properties in server-side
+            world.setBlockState(pos,state.with(Properties.LIT,blockEntity.isPowered()),Block.NOTIFY_ALL);
+        }
 
     }
-
 }

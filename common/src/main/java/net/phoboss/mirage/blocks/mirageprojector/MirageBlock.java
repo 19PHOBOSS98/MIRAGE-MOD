@@ -1,10 +1,7 @@
 package net.phoboss.mirage.blocks.mirageprojector;
 
 import com.google.gson.JsonObject;
-import net.minecraft.block.BlockEntityProvider;
-import net.minecraft.block.BlockRenderType;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.BlockWithEntity;
+import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.block.entity.BlockEntityType;
@@ -12,6 +9,8 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.state.StateManager;
+import net.minecraft.state.property.Properties;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
@@ -26,7 +25,14 @@ import org.jetbrains.annotations.Nullable;
 public class MirageBlock extends BlockWithEntity implements BlockEntityProvider, BookSettingsUtility {
     public MirageBlock(Settings settings) {
         super(settings);
+        this.setDefaultState(getDefaultState().with(Properties.LIT, true));
     }
+
+    @Override
+    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
+        builder.add(Properties.LIT);
+    }
+
     @Nullable
     @Override
     public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
