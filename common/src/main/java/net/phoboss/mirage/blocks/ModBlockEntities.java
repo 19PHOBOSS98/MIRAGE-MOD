@@ -17,6 +17,7 @@ public class ModBlockEntities {
             () ->   BlockEntityType.Builder.create(
                     MirageBlockEntity::new,
                     ModBlocks.MIRAGE_BLOCK.get()
+                    //ModBlocks.MIRAGE_BLOCK
             ).build(null));
 
     public static <T extends BlockEntityType> RegistrySupplier<T> registerBlockEntities(String name, Supplier<T> block){

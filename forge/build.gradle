@@ -51,6 +51,11 @@ repositories {
             includeGroup "maven.modrinth"
         }
     }
+    maven {
+        name = 'GeckoLib'
+        url 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+    }
+
     flatDir {
         dirs 'lib'
     }
@@ -63,6 +68,8 @@ dependencies {
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionForge")) { transitive = false }
+
+    modImplementation("software.bernie.geckolib:geckolib-forge-1.18:3.0.57")
 
     modCompileOnlyApi "curse.maven:oculus-581495:4578744"
     modCompileOnlyApi "orge.embeddedt:embeddium:0.2.17-git.d06d0fa.dirtymc1.18.2"

@@ -15,11 +15,11 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.state.property.Properties;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import net.phoboss.mirage.Mirage;
 import net.phoboss.mirage.blocks.mirageprojector.MirageBlock;
-import net.phoboss.mirage.items.ModItemGroups;
 import net.phoboss.mirage.items.ModItems;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,7 +29,7 @@ import java.util.function.Supplier;
 public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(Mirage.MOD_ID, Registry.BLOCK_KEY);
 
-    public static final RegistrySupplier<Block> MIRAGE_BLOCK = ModBlocks.registerBlock(
+    /*public static final RegistrySupplier<Block> MIRAGE_BLOCK = ModBlocks.registerBlock(
             "mirage_block",
             () -> new MirageBlock(AbstractBlock
                     .Settings.of(Material.GLASS, MapColor.DIAMOND_BLUE)
@@ -41,7 +41,29 @@ public class ModBlocks {
                     //.setStackLimit(1)
                     //.setTooltipKey("block.mirage.omni_beacon.tooltip")
                     //.setTooltipShiftKey("block.mirage.omni_beacon.tooltip.shift")
+    );*/
+
+    /*public static final Block MIRAGE_BLOCK = registerBlockWithoutItem("mirage_block",
+            new MirageBlock(AbstractBlock
+                                .Settings.of(Material.GLASS, MapColor.DIAMOND_BLUE)
+                                .nonOpaque()
+                                .noCollision()
+                                .luminance((state) -> state.get(Properties.LIT) ? 15 : 0)),
+            ModItemGroups.MIRAGE
+    );*/
+
+    public static final RegistrySupplier<Block> MIRAGE_BLOCK = ModBlocks.registerBlockWithoutItem(
+            "mirage_block",
+            () -> new MirageBlock(AbstractBlock
+                    .Settings.of(Material.GLASS, MapColor.DIAMOND_BLUE)
+                    .nonOpaque()
+                    .noCollision()
+                    .luminance((state) -> state.get(Properties.LIT) ? 15 : 0))
     );
+
+    public static <T extends Block> RegistrySupplier<T> registerBlockWithoutItem(String name, Supplier<T> block){
+        return BLOCKS.register(name,block);
+    }
 
     public static <T extends Block> RegistrySupplier<T> registerBlock(String name, Supplier<T> block, ItemGroup group){
         RegistrySupplier<T> toReturn = BLOCKS.register(name,block);
@@ -75,7 +97,9 @@ public class ModBlocks {
                 }
         );
     }
-
+    public static Block registerBlockWithoutItem(String name, Block block, ItemGroup group){
+        return Registry.register(Registry.BLOCK, new Identifier(Mirage.MOD_ID,name),block);
+    }
 
     public static void registerAll() {
         Mirage.LOGGER.info("Registering Mod Blocks for " + Mirage.MOD_ID);

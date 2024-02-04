@@ -37,6 +37,10 @@ repositories {
             includeGroup "maven.modrinth"
         }
     }
+    maven {
+        name = 'GeckoLib'
+        url 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+    }
     flatDir {
         dirs 'lib'
     }
@@ -51,6 +55,8 @@ dependencies {
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
+
+    modImplementation 'software.bernie.geckolib:geckolib-fabric-1.18:3.0.80'
 
     modRuntimeOnly "maven.modrinth:nELKzJ5C:RbIlcuU7" //https://modrinth.com/mod/open-simple-frames/version/RbIlcuU7
     modRuntimeOnly "net.phoboss:decobeacon:0.0.1-1.18.2-Fabric"

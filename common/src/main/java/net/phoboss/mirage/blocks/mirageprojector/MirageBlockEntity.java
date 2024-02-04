@@ -23,6 +23,16 @@ import net.phoboss.mirage.client.rendering.customworld.MirageWorld;
 import net.phoboss.mirage.client.rendering.customworld.StructureStates;
 import net.phoboss.mirage.utility.RedstoneStateChecker;
 import org.jetbrains.annotations.Nullable;
+import software.bernie.geckolib3.core.AnimationState;
+import software.bernie.geckolib3.core.IAnimatable;
+import software.bernie.geckolib3.core.PlayState;
+import software.bernie.geckolib3.core.builder.AnimationBuilder;
+import software.bernie.geckolib3.core.builder.ILoopType;
+import software.bernie.geckolib3.core.controller.AnimationController;
+import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
+import software.bernie.geckolib3.core.manager.AnimationData;
+import software.bernie.geckolib3.core.manager.AnimationFactory;
+import software.bernie.geckolib3.util.GeckoLibUtil;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -30,11 +40,12 @@ import java.util.HashMap;
 import java.util.List;
 
 
-public class MirageBlockEntity extends BlockEntity {
+public class MirageBlockEntity extends BlockEntity implements IAnimatable {
     public MirageBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MIRAGE_BLOCK.get(), pos, state);
         setBookSettingsPOJO(new MirageProjectorBook());
     }
+
     public MirageBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
@@ -322,8 +333,15 @@ public class MirageBlockEntity extends BlockEntity {
         }
         return active;
     }
-
+    public RedstoneStateChecker bottomRedstoneStateChecker = new RedstoneStateChecker();
+    public boolean wasBottomPowered() {
+        return bottomRedstoneStateChecker.getPreviousState();
+    }
+    public void savePreviousBottomPowerState(Boolean currentState) {
+        bottomRedstoneStateChecker.setPreviousState(currentState);
+    }
     public RedstoneStateChecker topRedstoneStateChecker = new RedstoneStateChecker();
+
     public boolean wasTopPowered() {
         return topRedstoneStateChecker.getPreviousState();
     }
@@ -412,4 +430,62 @@ public class MirageBlockEntity extends BlockEntity {
         }
 
     }
+
+    AnimationFactory animationFactory = GeckoLibUtil.createFactory(this);
+    @Override
+    public void registerControllers(AnimationData data) {
+        data.addAnimationController(new AnimationController<MirageBlockEntity>(this,"controller",0,this::predicate));
+    }
+
+    private PlayState predicate(AnimationEvent<MirageBlockEntity> event) {
+        MirageBlockEntity subject = event.getAnimatable();
+        AnimationController controller = event.getController();
+        controller.transitionLengthTicks = 0;
+        if(subject.isPowered()&&!subject.wasBottomPowered()){
+            controller.setAnimation(new AnimationBuilder().addAnimation("ramp_up", ILoopType.EDefaultLoopTypes.PLAY_ONCE));
+            return PlayState.CONTINUE;
+        }
+        else if(!subject.isPowered() && subject.wasBottomPowered()){
+            controller.setAnimation(new AnimationBuilder().addAnimation("ramp_down", ILoopType.EDefaultLoopTypes.PLAY_ONCE));
+            return PlayState.CONTINUE;
+        }
+        if(controller.getAnimationState() != AnimationState.Stopped) {
+            return PlayState.CONTINUE;
+        }
+        if (subject.isPowered()) {
+            controller.setAnimation(new AnimationBuilder().addAnimation("projecting", ILoopType.EDefaultLoopTypes.LOOP));
+            return PlayState.CONTINUE;
+        }
+        controller.setAnimation(new AnimationBuilder().addAnimation("idle", ILoopType.EDefaultLoopTypes.LOOP));
+        return PlayState.CONTINUE;
+
+    }
+
+    @Override
+    public AnimationFactory getFactory() {
+        return this.animationFactory;
+    }
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

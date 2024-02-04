@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "minecraft:block/redstone_lamp"
+      "model": "mirage:block/zoetrope_crystal"
     }
   }
 }
