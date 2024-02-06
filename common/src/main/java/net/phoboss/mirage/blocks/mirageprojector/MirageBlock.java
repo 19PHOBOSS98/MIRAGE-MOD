@@ -47,7 +47,7 @@ public class MirageBlock extends BlockWithEntity implements BlockEntityProvider,
 
     @Override
     public BlockRenderType getRenderType(BlockState state) {
-        return BlockRenderType.MODEL;
+        return BlockRenderType.ENTITYBLOCK_ANIMATED;
     }
 
     @Override

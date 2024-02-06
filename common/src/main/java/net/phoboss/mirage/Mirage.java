@@ -17,6 +17,7 @@ import net.phoboss.mirage.client.rendering.ModRendering;
 import net.phoboss.mirage.items.ModItems;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.bernie.geckolib3.GeckoLib;
 
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -31,6 +32,8 @@ public class Mirage {
     public static Path SCHEMATICS_FOLDER;
     public static Path CONFIG_FILE;
     public static void init() {
+        GeckoLib.initialize();
+
         initConfigFile();
         initSchematicsFolder();
 

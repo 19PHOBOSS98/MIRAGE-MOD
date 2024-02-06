@@ -11,7 +11,9 @@ public class ModItemGroups {
 
     public static ItemGroup MIRAGE  = CreativeTabRegistry.create(
             new Identifier("mirage", "mirage"),
-            () -> new ItemStack(ModBlocks.MIRAGE_BLOCK.get())
+            () -> new ItemStack(
+                    ModBlocks.MIRAGE_BLOCK.get())
+                    //ModBlocks.MIRAGE_BLOCK)
     );
 
 }
